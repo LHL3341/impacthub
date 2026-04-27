@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.models import User, BuzzSnapshot
-from app.config import OUTBOUND_PROXY, LLM_API_BASE, LLM_API_KEY, LLM_BUZZ_MODEL
+from app.config import OUTBOUND_PROXY, LLM_API_BASE, LLM_API_KEY, LLM_BUZZ_MODEL, LLM_FALLBACK_MODEL
 
 logger = logging.getLogger(__name__)
 
@@ -115,13 +115,13 @@ async def _query_llm(client: httpx.AsyncClient, prompt: str) -> tuple[str | None
     except Exception as e:
         logger.info("Responses API failed (%s), falling back to chat completions", e)
 
-    # ── Fallback: Chat Completions API ──
+    # ── Fallback: Chat Completions API with lightweight model ──
     try:
         resp = await client.post(
             f"{LLM_API_BASE}/chat/completions",
             headers={"Authorization": f"Bearer {LLM_API_KEY}"},
             json={
-                "model": BUZZ_MODEL,
+                "model": LLM_FALLBACK_MODEL,
                 "messages": [{"role": "user", "content": prompt}],
                 "max_completion_tokens": 16000,
             },

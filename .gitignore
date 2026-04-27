@@ -38,3 +38,10 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Claude Code session state
+.claude/
+
+# Honor enrichment local config & outputs (config holds API key)
+backend/scripts/honor_enrich/config.yaml
+backend/scripts/honor_enrich/output/

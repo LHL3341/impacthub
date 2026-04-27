@@ -48,7 +48,7 @@ export default function SettingsPanel({ user, onClose, onUpdated }: Props) {
         update.twitter_username = twitterUsername;
 
       if (Object.keys(update).length > 0) {
-        await api.updateProfile(user.id, update);
+        await api.updateProfile(String(user.id), update);
       }
       setDone(true);
       setTimeout(() => {

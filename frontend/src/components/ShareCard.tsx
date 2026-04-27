@@ -13,6 +13,14 @@ interface Props {
   buzz?: BuzzSnapshot | null;
   citationOverview?: CitationOverview | null;
   aiSummary?: AISummaryType | null;
+  /** radar dimensions to hide (replaced with 0.7 "medium-high" neutral position) */
+  hiddenRadarDims?: Set<string>;
+  /** hide the Scholar/GitHub/HF platform link row */
+  hidePlatformLinks?: boolean;
+  /** hide the CCF-A/B mini stat blocks */
+  hideCcfMini?: boolean;
+  /** hide the GitHub/HF mini stat blocks */
+  hideOssMini?: boolean;
 }
 
 /* ── helpers ─────────────────────────────────────────────────────────────── */
@@ -57,17 +65,22 @@ const ico = {
 
 /* ── SVG Radar ───────────────────────────────────────────────────────────── */
 
-function RadarSvg({ stats, buzzHeat }: { stats: Stats; buzzHeat: string }) {
+function RadarSvg({ stats, buzzHeat, hiddenDims }: { stats: Stats; buzzHeat: string; hiddenDims?: Set<string> }) {
   const cx = 130, cy = 130, R = 100;
   const commV = buzzHeat === "very_hot" ? 0.95 : buzzHeat === "hot" ? 0.75 : buzzHeat === "medium" ? 0.5 : buzzHeat === "cold" ? 0.25 : buzzHeat === "very_cold" ? 0.1 : 0;
 
+  // Hidden dims use a neutral "medium-high" position (0.7) so the radar shape
+  // stays intact without exposing the real value.
+  const MASK_V = 0.7;
+  const mask = (label: string, v: number) => (hiddenDims?.has(label) ? MASK_V : v);
+
   const dims = [
-    { label: "学术深度", v: norm(stats.total_citations, 10000), color: "#60a5fa" },
-    { label: "代码影响", v: norm(stats.total_stars + stats.total_forks, 20000), color: "#34d399" },
-    { label: "数据贡献", v: norm(stats.total_downloads + stats.total_hf_likes, 100000), color: "#a78bfa" },
-    { label: "产出广度", v: norm(stats.paper_count + stats.repo_count + stats.hf_count, 200), color: "#fbbf24" },
-    { label: "h-index", v: norm(stats.h_index, 60), color: "#f472b6" },
-    { label: "社区影响", v: commV, color: "#fb923c" },
+    { label: "学术深度", v: mask("学术深度", norm(stats.total_citations, 10000)), color: "#60a5fa" },
+    { label: "代码影响", v: mask("代码影响", norm(stats.total_stars + stats.total_forks, 20000)), color: "#34d399" },
+    { label: "数据贡献", v: mask("数据贡献", norm(stats.total_downloads + stats.total_hf_likes, 100000)), color: "#a78bfa" },
+    { label: "产出广度", v: mask("产出广度", norm(stats.paper_count + stats.repo_count + stats.hf_count, 200)), color: "#fbbf24" },
+    { label: "h-index", v: mask("h-index", norm(stats.h_index, 60)), color: "#f472b6" },
+    { label: "社区影响", v: mask("社区影响", commV), color: "#fb923c" },
   ];
   const n = dims.length;
   const angles = dims.map((_, i) => (360 / n) * i);
@@ -115,7 +128,10 @@ function RadarSvg({ stats, buzzHeat }: { stats: Stats; buzzHeat: string }) {
 
 /* ── Main Card ───────────────────────────────────────────────────────────── */
 
-const ShareCard = forwardRef<HTMLDivElement, Props>(({ user, stats, buzz, citationOverview, aiSummary }, ref) => {
+const ShareCard = forwardRef<HTMLDivElement, Props>(({
+  user, stats, buzz, citationOverview, aiSummary,
+  hiddenRadarDims, hidePlatformLinks, hideCcfMini, hideOssMini,
+}, ref) => {
   const buzzHeat = buzz?.heat_label ?? "";
   const heat = HEAT[buzzHeat];
   const hasCA = citationOverview && citationOverview.total_papers_analyzed > 0;
@@ -151,9 +167,9 @@ const ShareCard = forwardRef<HTMLDivElement, Props>(({ user, stats, buzz, citati
               <div style={{ marginTop: 2, fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{user.bio}</div>
             ) : null}
             <div style={{ marginTop: 6, display: "flex", gap: 5, flexWrap: "wrap" }}>
-              {user.github_username && <PlatformTag icon="gh" text={`@${user.github_username}`} />}
-              {user.scholar_id && <PlatformTag icon="ss" text="Scholar" />}
-              {user.hf_username && <PlatformTag icon="hf" text="HuggingFace" />}
+              {!hidePlatformLinks && user.github_username && <PlatformTag icon="gh" text={`@${user.github_username}`} />}
+              {!hidePlatformLinks && user.scholar_id && <PlatformTag icon="ss" text="Scholar" />}
+              {!hidePlatformLinks && user.hf_username && <PlatformTag icon="hf" text="HuggingFace" />}
               {aiSummary?.tags?.map((tag) => (
                 <span key={tag} style={{ display: "inline-flex", alignItems: "center", background: "rgba(167,139,250,0.15)", border: "1px solid rgba(167,139,250,0.25)", borderRadius: 20, padding: "2px 9px", fontSize: 10, fontWeight: 600, color: "rgba(167,139,250,0.9)" }}>{tag}</span>
               ))}
@@ -172,14 +188,14 @@ const ShareCard = forwardRef<HTMLDivElement, Props>(({ user, stats, buzz, citati
         {/* ── Radar + details ── */}
         <div style={{ marginTop: 14, display: "flex", gap: 8, alignItems: "center" }}>
           <div style={{ flexShrink: 0 }}>
-            <RadarSvg stats={stats} buzzHeat={buzzHeat} />
+            <RadarSvg stats={stats} buzzHeat={buzzHeat} hiddenDims={hiddenRadarDims} />
           </div>
 
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
             {/* 学术 */}
             <SectionBox title="学术论文" color="#60a5fa">
-              {stats.ccf_a_count > 0 && <Mini icon={ico.award("#fbbf24")} label="CCF-A" value={stats.ccf_a_count} />}
-              {stats.ccf_b_count > 0 && <Mini icon={ico.award("#94a3b8")} label="CCF-B" value={stats.ccf_b_count} />}
+              {!hideCcfMini && stats.ccf_a_count > 0 && <Mini icon={ico.award("#fbbf24")} label="CCF-A" value={stats.ccf_a_count} />}
+              {!hideCcfMini && stats.ccf_b_count > 0 && <Mini icon={ico.award("#94a3b8")} label="CCF-B" value={stats.ccf_b_count} />}
               {influential > 0 && <Mini icon={ico.bolt("#fb923c")} label="高影响力引用" value={influential} />}
               {topScholars > 0 && <Mini icon={ico.crown("#fbbf24")} label="顶级学者引用" value={topScholars} hint="h≥50" />}
               {notableScholars > 0 && <Mini icon={ico.userOk("#34d399")} label="知名学者引用" value={notableScholars} hint="h≥30" />}
@@ -187,12 +203,14 @@ const ShareCard = forwardRef<HTMLDivElement, Props>(({ user, stats, buzz, citati
             </SectionBox>
 
             {/* 开源 */}
-            <SectionBox title="开源项目" color="#34d399">
-              <Mini icon={ico.code("#34d399")} label="github仓库" value={stats.repo_count} />
-              <Mini icon={ico.fork("#94a3b8")} label="Forks" value={stats.total_forks} />
-              <Mini icon={ico.box("#a78bfa")} label="HF项目" value={stats.hf_count} />
-              <Mini icon={ico.dl("#60a5fa")} label="HF下载" value={stats.total_downloads} />
-            </SectionBox>
+            {!hideOssMini && (
+              <SectionBox title="开源项目" color="#34d399">
+                <Mini icon={ico.code("#34d399")} label="github仓库" value={stats.repo_count} />
+                <Mini icon={ico.fork("#94a3b8")} label="Forks" value={stats.total_forks} />
+                <Mini icon={ico.box("#a78bfa")} label="HF项目" value={stats.hf_count} />
+                <Mini icon={ico.dl("#60a5fa")} label="HF下载" value={stats.total_downloads} />
+              </SectionBox>
+            )}
 
             {/* 讨论 */}
             {heat && (

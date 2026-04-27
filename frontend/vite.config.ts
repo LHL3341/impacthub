@@ -13,6 +13,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": "http://127.0.0.1:8001",
+      "/static": "http://127.0.0.1:8001",
     },
     watch: {
       usePolling: true,

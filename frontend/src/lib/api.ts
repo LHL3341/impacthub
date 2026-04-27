@@ -266,6 +266,294 @@ export interface ResearchBasisRequest {
   papers: PaperSelectionIn[];
 }
 
+// ---------- Research Trajectory (研究演化树) ----------
+
+export interface TreeNode {
+  label: string;
+  summary?: string;
+  year_range?: string;
+  paper_count?: number;
+  paper_ids?: number[];
+  children?: TreeNode[];
+}
+
+export interface TrajectoryPaperRef {
+  id: number;
+  title: string;
+  year: number;
+  venue: string;
+  citation_count: number;
+  ccf_rank: string;
+}
+
+export interface BuzzTimepoint {
+  period_label: string;
+  heat_label: string;
+  topics: string[];
+}
+
+export interface TrajectoryData {
+  root: TreeNode;
+  papers_index: Record<number, TrajectoryPaperRef>;
+  buzz_timeline: BuzzTimepoint[];
+  refreshed_at: string | null;
+}
+
+// ---------- Researcher Persona (研究者人格) ----------
+
+export interface ResearcherPersona {
+  user_id: number;
+  persona_code: string;
+  name_zh: string;
+  name_en: string;
+  emoji: string;
+  tagline?: string;
+  description: string;
+  traits: string[];
+  color_from: string;
+  color_to: string;
+  dimension_scores: Record<string, number>;
+  raw_metrics: Record<string, number>;
+  refreshed_at: string | null;
+}
+
+// ---------- Capability Profile (多方向能力画像) ----------
+
+export interface CapabilityWork {
+  title: string;
+  year?: number | null;
+  citing_count: number;
+}
+
+export interface CapabilityDirectionProfile {
+  direction_en: string;
+  direction_zh: string;
+  weight: number;       // 0-1
+  role: "originator" | "early_adopter" | "extender" | "follower" | string;
+  role_zh: string;
+  role_en: string;
+  role_emoji: string;
+  role_color: string;
+  score: number;
+  achievements: string;
+  representative_works: CapabilityWork[];
+}
+
+export interface CapabilityData {
+  user_id: number;
+  primary_role: string;
+  primary_role_zh: string;
+  primary_role_emoji: string;
+  primary_role_color: string;
+  primary_direction: string;
+  profiles: CapabilityDirectionProfile[];
+  rationale: string;
+  refreshed_at: string | null;
+}
+
+// ---------- Annual Poem (年度诗篇) ----------
+
+export interface PoemHighlight {
+  label: string;
+  value: string;
+}
+
+export interface AnnualPoemData {
+  user_id: number;
+  year: number;
+  title: string;
+  verses: string[];
+  highlights: PoemHighlight[];
+  theme: "indigo" | "amber" | "emerald" | "rose";
+  refreshed_at: string | null;
+}
+
+// ---------- Career History (职业经历) ----------
+
+export interface CareerStep {
+  start_year: number | null;
+  end_year: number | null;
+  type: "education" | "position";
+  role: string;
+  institution: string;
+  advisor: string;
+  note: string;
+}
+
+export interface CareerData {
+  user_id: number;
+  timeline: CareerStep[];
+  current: string;
+  sources: { title: string; url: string }[];
+  refreshed_at: string | null;
+}
+
+// ---------- Leaderboard / Rankings ----------
+
+export interface LeaderboardEntry {
+  rank: number | null;
+  percentile: number | null;
+  user: {
+    id: number;
+    name: string;
+    avatar_url: string;
+    scholar_id: string;
+    github_username: string;
+    research_direction: string | null;
+    seed_tier: string | null;
+    honor_tags: string[];
+  };
+  metrics: {
+    h_index: number;
+    total_citations: number;
+    paper_count: number;
+    ccf_a_count: number;
+    total_stars: number;
+    first_paper_year: number | null;
+  };
+  persona_code: string | null;
+}
+
+export interface LeaderboardData {
+  type: "total" | "young" | "direction";
+  metric: "h_index" | "total_citations" | "ccf_a_count" | "total_stars";
+  direction: string | null;
+  total_count: number;
+  entries: LeaderboardEntry[];
+  target_rank?: {
+    rank: number | null;
+    percentile: number | null;
+    metric_value: number;
+  };
+}
+
+// ---------- Advisor (导师推荐 / 保研) ----------
+
+export interface AdvisorSchoolBrief {
+  id: number;
+  name: string;
+  short_name: string;
+  english_name: string;
+  city: string;
+  province: string;
+  school_type: string;
+  is_985: boolean;
+  is_211: boolean;
+  is_double_first_class: boolean;
+  homepage_url: string;
+  college_count: number;
+  advisor_count: number;
+}
+
+export interface AdvisorCollegeBrief {
+  id: number;
+  school_id: number;
+  name: string;
+  discipline_category: string;
+  homepage_url: string;
+  advisor_count: number;
+}
+
+export interface AdvisorBrief {
+  id: number;
+  school_id: number;
+  college_id: number;
+  name: string;
+  title: string;
+  is_doctoral_supervisor: boolean;
+  research_areas: string[] | null;
+  homepage_url: string;
+  photo_url: string;
+  h_index: number;
+  citation_count: number;
+}
+
+export interface AdvisorSchoolDetail {
+  school: AdvisorSchoolBrief;
+  colleges_crawled_at: string | null;
+  advisors_crawled_at: string | null;
+  colleges: AdvisorCollegeBrief[];
+}
+
+export interface AdvisorDirectoryStats {
+  total_schools: number;
+  schools_985: number;
+  schools_211: number;
+  total_colleges: number;
+  total_advisors: number;
+  by_province: Record<string, number>;
+  by_school_type: Record<string, number>;
+}
+
+// ---------- Recruit (B2B 猎头查询) ----------
+
+export interface RecruitCriteria {
+  intent_summary: string;
+  research_directions: string[];
+  must_have_keywords: string[];
+  nice_to_have_keywords: string[];
+  seniority: "senior" | "mid" | "junior" | "any";
+  min_h_index: number;
+  min_paper_count: number;
+  min_ccf_a_count: number;
+  min_total_stars: number;
+  needs_open_source: boolean;
+  needs_industry_experience: boolean;
+  honors_preferred: string[];
+  exclude_keywords: string[];
+  ranking_priority: string;
+}
+
+export interface RecruitKeyWork {
+  title: string;
+  year: number;
+  venue: string;
+  ccf_rank: string;
+  citation_count: number;
+  url: string;
+}
+
+export interface RecruitCandidate {
+  user_id: number;
+  name: string;
+  match_score: number;
+  tier: "perfect" | "strong" | "potential";
+  fit_reasoning: string;
+  highlights: string[];
+  concerns: string[];
+  key_works: RecruitKeyWork[];
+  user: {
+    id: number;
+    name: string;
+    avatar_url: string;
+    scholar_id: string;
+    github_username: string;
+    homepage: string;
+    bio: string;
+    honor_tags: string[];
+    research_direction: string;
+  };
+  metrics: {
+    h_index: number;
+    total_citations: number;
+    paper_count: number;
+    ccf_a_count: number;
+    total_stars: number;
+    first_paper_year: number | null;
+  };
+  primary_direction: string;
+  persona_code: string;
+  top_repos: { name: string; stars: number; url: string }[];
+}
+
+export interface RecruitSearchResponse {
+  criteria: RecruitCriteria;
+  results: RecruitCandidate[];
+  search_summary: string;
+  candidate_pool_size: number;
+  filtered_pool_size?: number;
+}
+
 export interface SiteStats {
   total_profiles: number;
   total_papers: number;
@@ -310,7 +598,7 @@ export const api = {
       body: JSON.stringify(data),
     });
   },
-  updateProfile(identifier: string, data: { scholar_id?: string; hf_username?: string }) {
+  updateProfile(identifier: string, data: { scholar_id?: string; hf_username?: string; github_username?: string; twitter_username?: string; homepage?: string; feishu_webhook?: string }) {
     return request<UserProfile>(`/profile/${identifier}`, {
       method: "PATCH",
       body: JSON.stringify(data),
@@ -332,7 +620,7 @@ export const api = {
     return request<{ status: string }>(`/refresh/${identifier}`, { method: "POST" });
   },
   addRepo(identifier: string, repoFullName: string) {
-    return request<Repo>(`/profile/${identifier}/repos`, {
+    return request<GithubRepo>(`/profile/${identifier}/repos`, {
       method: "POST",
       body: JSON.stringify({ repo_full_name: repoFullName }),
     });
@@ -420,8 +708,98 @@ export const api = {
       body: JSON.stringify(req),
     });
   },
+  getTrajectory(identifier: string) {
+    return request<TrajectoryData | null>(`/trajectory/${identifier}`);
+  },
+  refreshTrajectory(identifier: string) {
+    return request<{ status: string }>(`/trajectory/${identifier}/refresh`, { method: "POST" });
+  },
+  getPersona(identifier: string) {
+    return request<ResearcherPersona | null>(`/persona/${identifier}`);
+  },
+  refreshPersona(identifier: string) {
+    return request<{ status: string }>(`/persona/${identifier}/refresh`, { method: "POST" });
+  },
+  getCareer(identifier: string) {
+    return request<CareerData | null>(`/career/${identifier}`);
+  },
+  refreshCareer(identifier: string) {
+    return request<{ status: string }>(`/career/${identifier}/refresh`, { method: "POST" });
+  },
+  getCapability(identifier: string) {
+    return request<CapabilityData | null>(`/capability/${identifier}`);
+  },
+  refreshCapability(identifier: string) {
+    return request<{ status: string }>(`/capability/${identifier}/refresh`, { method: "POST" });
+  },
+  getAnnualPoem(identifier: string, year?: number) {
+    const qs = year ? `?year=${year}` : "";
+    return request<AnnualPoemData | null>(`/poem/${identifier}${qs}`);
+  },
+  refreshAnnualPoem(identifier: string, year?: number) {
+    const qs = year ? `?year=${year}` : "";
+    return request<{ status: string; year: number }>(`/poem/${identifier}/refresh${qs}`, { method: "POST" });
+  },
+  getRankings(params: {
+    type?: "total" | "young" | "direction";
+    direction?: string;
+    metric?: "h_index" | "total_citations" | "ccf_a_count" | "total_stars";
+    offset?: number;
+    limit?: number;
+    target_user_id?: number;
+  }) {
+    const sp = new URLSearchParams();
+    if (params.type) sp.set("type", params.type);
+    if (params.direction) sp.set("direction", params.direction);
+    if (params.metric) sp.set("metric", params.metric);
+    if (params.offset != null) sp.set("offset", String(params.offset));
+    if (params.limit != null) sp.set("limit", String(params.limit));
+    if (params.target_user_id) sp.set("target_user_id", String(params.target_user_id));
+    return request<LeaderboardData>(`/rankings?${sp.toString()}`);
+  },
+  getRankingDirections() {
+    return request<string[]>(`/rankings/directions`);
+  },
   getSiteStats() {
     return request<SiteStats>("/stats");
+  },
+  getAdvisorStats() {
+    return request<AdvisorDirectoryStats>("/advisor/stats");
+  },
+  crawlAdvisorSchool(schoolId: number, fetchAdvisors = false) {
+    return request<{ status: string; school_id: number; fetch_advisors: boolean }>(
+      `/advisor/schools/${schoolId}/crawl?fetch_advisors=${fetchAdvisors}`,
+      { method: "POST" }
+    );
+  },
+  crawlAdvisorCollege(collegeId: number) {
+    return request<{ status: string; college_id: number }>(
+      `/advisor/colleges/${collegeId}/crawl-advisors`,
+      { method: "POST" }
+    );
+  },
+  listAdvisorSchools(params: { province?: string; school_type?: string; tier?: "985" | "211"; q?: string } = {}) {
+    const sp = new URLSearchParams();
+    if (params.province) sp.set("province", params.province);
+    if (params.school_type) sp.set("school_type", params.school_type);
+    if (params.tier) sp.set("tier", params.tier);
+    if (params.q) sp.set("q", params.q);
+    return request<AdvisorSchoolBrief[]>(`/advisor/schools?${sp.toString()}`);
+  },
+  getAdvisorSchool(schoolId: number) {
+    return request<AdvisorSchoolDetail>(`/advisor/schools/${schoolId}`);
+  },
+  listAdvisorsInCollege(collegeId: number) {
+    return request<AdvisorBrief[]>(`/advisor/colleges/${collegeId}/advisors`);
+  },
+  recruitSearch(jd: string, topK = 10) {
+    return request<RecruitSearchResponse>("/recruit/search", {
+      method: "POST",
+      body: JSON.stringify({ jd, top_k: topK }),
+    });
+  },
+  getDoc(slug: string) {
+    return request<{ slug: string; filename: string; content: string }>(`/docs/${slug}`);
   },
   trackVisit(path: string) {
     return request<{ ok: boolean }>("/track", {

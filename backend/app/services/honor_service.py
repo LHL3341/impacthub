@@ -21,7 +21,7 @@ import httpx
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import LLM_API_BASE, LLM_API_KEY, LLM_BUZZ_MODEL
+from app.config import LLM_API_BASE, LLM_API_KEY, LLM_BUZZ_MODEL, LLM_FALLBACK_MODEL
 from app.database import async_session
 from app.models import NotableCitation
 
@@ -161,12 +161,12 @@ async def _query_honors(
         except Exception as e:
             logger.info("Honor Responses API failed (%s), falling back", e)
 
-        # Fallback: Chat Completions API
+        # Fallback: Chat Completions API with lightweight model (no web search)
         resp = await client.post(
             f"{LLM_API_BASE}/chat/completions",
             headers={"Authorization": f"Bearer {LLM_API_KEY}"},
             json={
-                "model": LLM_BUZZ_MODEL,
+                "model": LLM_FALLBACK_MODEL,
                 "messages": [{"role": "user", "content": prompt}],
                 "max_completion_tokens": 4000,
             },

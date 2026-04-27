@@ -233,3 +233,127 @@ class PaperEvidenceOut(BaseModel):
     top_scholar_count: int = 0
     notable_scholar_count: int = 0
     notable_citations: list[NotableCitationBrief] = []
+
+
+# ---------- Research Trajectory (研究演化树) ----------
+
+class TreeNode(BaseModel):
+    """A node in the research evolution tree. Recursive structure."""
+    label: str
+    summary: str = ""
+    year_range: str = ""
+    paper_count: int = 0
+    paper_ids: list[int] = []
+    children: list["TreeNode"] = []
+
+
+class TrajectoryPaperRef(BaseModel):
+    """Lightweight paper reference used by tree leaves."""
+    id: int
+    title: str
+    year: int
+    venue: str = ""
+    citation_count: int = 0
+    ccf_rank: str = ""
+
+
+class BuzzTimepoint(BaseModel):
+    period_label: str
+    heat_label: str
+    topics: list[str]
+
+
+class TrajectoryData(BaseModel):
+    root: TreeNode
+    papers_index: dict[int, TrajectoryPaperRef] = {}
+    buzz_timeline: list[BuzzTimepoint] = []
+    refreshed_at: str | None = None
+
+
+TreeNode.model_rebuild()
+
+
+# ---------- Capability Profile (多方向能力画像) ----------
+
+class CapabilityWork(BaseModel):
+    title: str = ""
+    year: int | None = None
+    citing_count: int = 0
+
+
+class CapabilityDirectionProfile(BaseModel):
+    direction_en: str = ""
+    direction_zh: str = ""
+    weight: float = 0.0        # 0-1 proportion of this direction in the scholar's work
+    role: str = ""             # "originator" | "early_adopter" | "extender" | "follower"
+    score: float = 0.0         # 0-1 how far along the originator-follower axis
+    achievements: str = ""     # 1-2 sentence summary of the person's achievements in this direction
+    representative_works: list[CapabilityWork] = []
+
+
+class CapabilityOut(BaseModel):
+    user_id: int
+    primary_role: str = ""
+    primary_direction: str = ""
+    profiles: list[CapabilityDirectionProfile] = []
+    rationale: str = ""
+    refreshed_at: str | None = None
+
+
+# ---------- Annual Poem (年度诗篇) ----------
+
+class PoemHighlight(BaseModel):
+    label: str
+    value: str
+
+
+class AnnualPoemOut(BaseModel):
+    user_id: int
+    year: int
+    title: str = ""
+    verses: list[str] = []
+    highlights: list[PoemHighlight] = []
+    theme: str = "indigo"   # "indigo" | "amber" | "emerald" | "rose"
+    refreshed_at: str | None = None
+
+
+# ---------- Career History (职业经历) ----------
+
+class CareerStep(BaseModel):
+    start_year: int | None = None
+    end_year: int | None = None  # None = ongoing
+    type: str = "position"       # "education" | "position"
+    role: str = ""               # e.g. "PhD Student", "Research Scientist"
+    institution: str = ""
+    advisor: str = ""            # optional, typically for PhD
+    note: str = ""               # optional short remark
+
+
+class CareerSource(BaseModel):
+    title: str = ""
+    url: str = ""
+
+
+class CareerOut(BaseModel):
+    user_id: int
+    timeline: list[CareerStep] = []
+    current: str = ""
+    sources: list[CareerSource] = []
+    refreshed_at: str | None = None
+
+
+# ---------- Researcher Persona (研究者人格) ----------
+
+class PersonaOut(BaseModel):
+    user_id: int
+    persona_code: str
+    name_zh: str
+    name_en: str
+    emoji: str
+    description: str
+    traits: list[str]
+    color_from: str
+    color_to: str
+    dimension_scores: dict[str, float]
+    raw_metrics: dict[str, float]
+    refreshed_at: str | None = None

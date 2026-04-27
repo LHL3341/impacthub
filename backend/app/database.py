@@ -38,6 +38,38 @@ async def init_db():
             )
         except Exception:
             pass  # Column already exists
+        try:
+            await conn.execute(
+                text("ALTER TABLE users ADD COLUMN honor_tags JSON DEFAULT NULL")
+            )
+        except Exception:
+            pass
+        try:
+            await conn.execute(
+                text("ALTER TABLE users ADD COLUMN research_direction VARCHAR(20) DEFAULT ''")
+            )
+        except Exception:
+            pass
+        try:
+            await conn.execute(
+                text("ALTER TABLE users ADD COLUMN seed_tier VARCHAR(20) DEFAULT ''")
+            )
+        except Exception:
+            pass
+        # annual_poems and career_histories are covered by create_all above
+        # capability_profiles: schema changed from single-type to per-direction
+        try:
+            await conn.execute(text("ALTER TABLE capability_profiles ADD COLUMN primary_role VARCHAR(20) DEFAULT ''"))
+        except Exception:
+            pass
+        try:
+            await conn.execute(text("ALTER TABLE capability_profiles ADD COLUMN primary_direction VARCHAR(100) DEFAULT ''"))
+        except Exception:
+            pass
+        try:
+            await conn.execute(text("ALTER TABLE capability_profiles ADD COLUMN profiles_json JSON DEFAULT '[]'"))
+        except Exception:
+            pass
 
 
 async def get_db():

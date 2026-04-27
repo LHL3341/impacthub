@@ -9,6 +9,11 @@ import {
   type BuzzSnapshot,
   type CitationOverview,
   type AISummary,
+  type ResearcherPersona,
+  type TrajectoryData,
+  type CareerData,
+  type AnnualPoemData,
+  type CapabilityData,
 } from "@/lib/api";
 import HeroSection from "@/components/HeroSection";
 import RadarChart from "@/components/RadarChart";
@@ -23,6 +28,10 @@ import LinkAccountModal from "@/components/LinkAccountModal";
 import GrowthDashboard from "@/components/GrowthDashboard";
 import SettingsPanel from "@/components/SettingsPanel";
 import BuzzCard from "@/components/BuzzCard";
+import EvolutionTab from "@/components/EvolutionTab";
+import CareerCard from "@/components/CareerCard";
+import PersonaShowcase from "@/components/PersonaShowcase";
+import CapabilityCard from "@/components/CapabilityCard";
 import SmartExporter from "@/components/SmartExporter";
 import {
   RefreshCw,
@@ -40,20 +49,40 @@ import {
   Flame,
   Sparkles,
   FileDown,
+  Network,
+  Briefcase,
 } from "lucide-react";
 
-type TabKey = "papers" | "repos" | "hf" | "citations" | "growth" | "buzz" | "timeline" | "export";
+// Top-level grouping: 成果 / 影响 / 演化 / 导出
+type TabKey = "output" | "impact" | "evolution" | "export";
+type SubKey = "papers" | "repos" | "hf" | "timeline" | "citations" | "growth" | "buzz" | "research_tree" | "career" | "capability";
 
 const tabs: { key: TabKey; label: string; icon: typeof BookOpen }[] = [
-  { key: "papers", label: "学术论文", icon: BookOpen },
-  { key: "citations", label: "引用分析", icon: Quote },
-  { key: "repos", label: "代码仓库", icon: GitBranch },
-  { key: "hf", label: "模型与数据集", icon: Box },
-  { key: "growth", label: "增量追踪", icon: TrendingUp },
-  { key: "buzz", label: "社区讨论", icon: Flame },
-  { key: "timeline", label: "时间轴", icon: Clock },
-  { key: "export", label: "智能导出", icon: FileDown },
+  { key: "evolution", label: "经历", icon: Network },
+  { key: "output", label: "成果", icon: BookOpen },
+  { key: "impact", label: "影响", icon: TrendingUp },
+  { key: "export", label: "导出", icon: FileDown },
 ];
+
+const subTabs: Record<TabKey, { key: SubKey; label: string; icon: typeof BookOpen }[]> = {
+  output: [
+    { key: "papers", label: "学术论文", icon: BookOpen },
+    { key: "repos", label: "代码仓库", icon: GitBranch },
+    { key: "hf", label: "模型与数据集", icon: Box },
+    { key: "timeline", label: "时间轴", icon: Clock },
+  ],
+  impact: [
+    { key: "citations", label: "引用分析", icon: Quote },
+    { key: "growth", label: "增量追踪", icon: TrendingUp },
+    { key: "buzz", label: "社区讨论", icon: Flame },
+  ],
+  evolution: [
+    { key: "research_tree", label: "研究演化", icon: Network },
+    { key: "career", label: "履历", icon: Briefcase },
+    { key: "capability", label: "能力画像", icon: Sparkles },
+  ],
+  export: [],
+};
 
 export default function ProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -71,7 +100,23 @@ export default function ProfilePage() {
   const [aiSummary, setAISummary] = useState<AISummary | null>(null);
   const [aiSummaryLoading, setAISummaryLoading] = useState(false);
   const aiPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [activeTab, setActiveTab] = useState<TabKey>("papers");
+  const [persona, setPersona] = useState<ResearcherPersona | null>(null);
+  const [personaLoading, setPersonaLoading] = useState(false);
+  const personaPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [trajectory, setTrajectory] = useState<TrajectoryData | null>(null);
+  const [career, setCareer] = useState<CareerData | null>(null);
+  const [careerRefreshing, setCareerRefreshing] = useState(false);
+  const [careerElapsed, setCareerElapsed] = useState(0);
+  const careerTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const careerPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [poem, setPoem] = useState<AnnualPoemData | null>(null);
+  const [poemRefreshing, setPoemRefreshing] = useState(false);
+  const poemPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [capability, setCapability] = useState<CapabilityData | null>(null);
+  const [capabilityLoading, setCapabilityLoading] = useState(false);
+  const capabilityPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [activeTab, setActiveTab] = useState<TabKey>("evolution");
+  const [activeSub, setActiveSub] = useState<SubKey>("research_tree");
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showShare, setShowShare] = useState(false);
@@ -92,6 +137,13 @@ export default function ProfilePage() {
       api.getBuzz(userId).then((b) => setBuzz(b)).catch(() => {});
       api.getCitationOverview(userId).then((c) => setCitationOverview(c)).catch(() => {});
       api.getAISummary(userId).then((s) => setAISummary(s)).catch(() => {});
+      api.getPersona(userId).then((p) => setPersona(p)).catch(() => {});
+      api.getTrajectory(userId).then((t) => {
+        if (t && (t as { root?: unknown }).root) setTrajectory(t);
+      }).catch(() => {});
+      api.getCareer(userId).then((c) => setCareer(c)).catch(() => {});
+      api.getAnnualPoem(userId).then((p) => setPoem(p)).catch(() => {});
+      api.getCapability(userId).then((c) => setCapability(c)).catch(() => {});
     } catch (err) {
       console.error(err);
     } finally {
@@ -147,6 +199,30 @@ export default function ProfilePage() {
     }
   };
 
+  const handleGeneratePersona = async () => {
+    if (personaLoading) return;
+    setPersonaLoading(true);
+    try {
+      await api.refreshPersona(userId);
+      const prevRefreshed = persona?.refreshed_at;
+      if (personaPollRef.current) clearInterval(personaPollRef.current);
+      personaPollRef.current = setInterval(async () => {
+        const p = await api.getPersona(userId).catch(() => null);
+        if (p && p.refreshed_at !== prevRefreshed) {
+          setPersona(p);
+          setPersonaLoading(false);
+          if (personaPollRef.current) { clearInterval(personaPollRef.current); personaPollRef.current = null; }
+        }
+      }, 2000);
+      setTimeout(() => {
+        if (personaPollRef.current) { clearInterval(personaPollRef.current); personaPollRef.current = null; }
+        setPersonaLoading(false);
+      }, 30000);
+    } catch {
+      setPersonaLoading(false);
+    }
+  };
+
   const handleBuzzRefresh = async () => {
     if (buzzRefreshing) return;
     setBuzzRefreshing(true);
@@ -179,11 +255,90 @@ export default function ProfilePage() {
     }
   };
 
+  const handleCareerRefresh = async () => {
+    if (careerRefreshing) return;
+    setCareerRefreshing(true);
+    setCareerElapsed(0);
+    if (careerTimerRef.current) clearInterval(careerTimerRef.current);
+    careerTimerRef.current = setInterval(() => setCareerElapsed((e) => e + 1), 1000);
+    try {
+      await api.refreshCareer(userId);
+      const prev = career?.refreshed_at;
+      let tries = 0;
+      if (careerPollRef.current) clearInterval(careerPollRef.current);
+      careerPollRef.current = setInterval(async () => {
+        tries++;
+        const fresh = await api.getCareer(userId).catch(() => null);
+        if ((fresh?.refreshed_at && fresh.refreshed_at !== prev) || tries > 60) {
+          if (careerPollRef.current) clearInterval(careerPollRef.current);
+          if (careerTimerRef.current) clearInterval(careerTimerRef.current);
+          careerPollRef.current = null;
+          careerTimerRef.current = null;
+          if (fresh?.refreshed_at && fresh.refreshed_at !== prev) setCareer(fresh);
+          setCareerRefreshing(false);
+        }
+      }, 3000);
+    } catch {
+      setCareerRefreshing(false);
+      if (careerTimerRef.current) { clearInterval(careerTimerRef.current); careerTimerRef.current = null; }
+    }
+  };
+
+  const handleGeneratePoem = async () => {
+    if (poemRefreshing) return;
+    setPoemRefreshing(true);
+    try {
+      const res = await api.refreshAnnualPoem(userId);
+      const year = res.year;
+      let tries = 0;
+      if (poemPollRef.current) clearInterval(poemPollRef.current);
+      poemPollRef.current = setInterval(async () => {
+        tries++;
+        const fresh = await api.getAnnualPoem(userId, year).catch(() => null);
+        if ((fresh && fresh.refreshed_at && fresh.year === year) || tries > 40) {
+          if (poemPollRef.current) clearInterval(poemPollRef.current);
+          poemPollRef.current = null;
+          if (fresh) setPoem(fresh);
+          setPoemRefreshing(false);
+        }
+      }, 3000);
+    } catch {
+      setPoemRefreshing(false);
+    }
+  };
+
+  const handleGenerateCapability = async () => {
+    if (capabilityLoading) return;
+    setCapabilityLoading(true);
+    try {
+      await api.refreshCapability(userId);
+      const prev = capability?.refreshed_at;
+      let tries = 0;
+      if (capabilityPollRef.current) clearInterval(capabilityPollRef.current);
+      capabilityPollRef.current = setInterval(async () => {
+        tries++;
+        const fresh = await api.getCapability(userId).catch(() => null);
+        if ((fresh?.refreshed_at && fresh.refreshed_at !== prev) || tries > 40) {
+          if (capabilityPollRef.current) clearInterval(capabilityPollRef.current);
+          capabilityPollRef.current = null;
+          if (fresh?.refreshed_at && fresh.refreshed_at !== prev) setCapability(fresh);
+          setCapabilityLoading(false);
+        }
+      }, 3000);
+    } catch {
+      setCapabilityLoading(false);
+    }
+  };
+
   // Cleanup polling on unmount
   useEffect(() => () => {
     if (buzzTimerRef.current) clearInterval(buzzTimerRef.current);
     if (buzzPollRef.current) clearInterval(buzzPollRef.current);
     if (aiPollRef.current) clearInterval(aiPollRef.current);
+    if (careerTimerRef.current) clearInterval(careerTimerRef.current);
+    if (careerPollRef.current) clearInterval(careerPollRef.current);
+    if (poemPollRef.current) clearInterval(poemPollRef.current);
+    if (capabilityPollRef.current) clearInterval(capabilityPollRef.current);
   }, []);
 
   if (loading) {
@@ -321,6 +476,31 @@ export default function ProfilePage() {
             返回
           </Link>
           <div className="flex items-center gap-2">
+            {persona ? (
+              <button
+                onClick={handleShare}
+                className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium shadow-sm transition hover:scale-105"
+                style={{
+                  backgroundColor: persona.color_from + "18",
+                  color: persona.color_from,
+                  borderColor: persona.color_from + "60",
+                }}
+                title={persona.tagline || persona.description}
+              >
+                <span className="text-base leading-none">{persona.emoji}</span>
+                <span>{persona.name_zh}</span>
+                <span className="text-[10px] font-mono opacity-70">{persona.persona_code}</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleGeneratePersona}
+                disabled={personaLoading}
+                className="flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-600 shadow-sm transition hover:border-indigo-400 disabled:opacity-50"
+              >
+                {personaLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                {personaLoading ? "计算中" : "生成人格"}
+              </button>
+            )}
             <button
               onClick={handleShare}
               className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 shadow-sm transition hover:border-indigo-300 hover:text-indigo-600"
@@ -361,6 +541,9 @@ export default function ProfilePage() {
           aiSummaryLoading={aiSummaryLoading}
           onGenerateAISummary={handleGenerateAISummary}
           onLinkAccounts={() => setShowLink(true)}
+          persona={persona}
+          personaLoading={personaLoading}
+          onGeneratePersona={handleGeneratePersona}
         />
 
         <motion.div
@@ -369,8 +552,14 @@ export default function ProfilePage() {
           transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
           className="mt-6 grid gap-6 lg:grid-cols-3"
         >
-          <div className="lg:col-span-1">
+          <div className="flex flex-col gap-4 lg:col-span-1">
             <RadarChart stats={stats} buzzHeat={buzz?.heat_label} />
+            <PersonaShowcase
+              persona={persona}
+              loading={personaLoading}
+              onGenerate={handleGeneratePersona}
+              onShare={handleShare}
+            />
           </div>
           <div className="flex flex-col gap-4 lg:col-span-2">
             <StatsOverview
@@ -388,19 +577,30 @@ export default function ProfilePage() {
           transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
           className="mt-8"
         >
+          {/* Top-level tabs */}
           <div className="flex gap-1 overflow-x-auto rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
             {tabs.map(({ key, label, icon: Icon }) => {
+              // Aggregate markers per top-level group
+              const groupSubs = subTabs[key].map((s) => s.key);
               const unconfigured =
-                ((key === "papers" || key === "citations") && !hasScholar) ||
-                (key === "repos" && !hasGithub) ||
-                (key === "hf" && !hasHF);
+                (key === "output" && !hasScholar && !hasGithub && !hasHF) ||
+                (groupSubs.includes("papers") && !hasScholar && groupSubs.every((k) => (k === "papers") || (k === "repos" && !hasGithub) || (k === "hf" && !hasHF) || (k === "timeline")));
               const needsAction =
-                (key === "citations" && hasScholar && citationOverview && citationOverview.total_papers_analyzed === 0 && !citationOverview.is_analyzing) ||
-                (key === "buzz" && !buzz);
+                (key === "impact" &&
+                  ((hasScholar && citationOverview && citationOverview.total_papers_analyzed === 0 && !citationOverview.is_analyzing)
+                    || !buzz));
               return (
                 <button
                   key={key}
-                  onClick={() => setActiveTab(key)}
+                  onClick={() => {
+                    setActiveTab(key);
+                    if (subTabs[key].length > 0) {
+                      const firstSub = subTabs[key][0].key;
+                      if (!subTabs[key].find((s) => s.key === activeSub)) {
+                        setActiveSub(firstSub);
+                      }
+                    }
+                  }}
                   className={`relative flex shrink-0 flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition ${
                     activeTab === key
                       ? "bg-indigo-600 text-white shadow"
@@ -428,14 +628,46 @@ export default function ProfilePage() {
             })}
           </div>
 
+          {/* Sub-tabs (only for groups that have them) */}
+          {subTabs[activeTab].length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {subTabs[activeTab].map(({ key, label, icon: Icon }) => {
+                const active = activeSub === key;
+                const subUnconfigured =
+                  ((key === "papers" || key === "citations") && !hasScholar) ||
+                  (key === "repos" && !hasGithub) ||
+                  (key === "hf" && !hasHF);
+                const subNeedsAction =
+                  (key === "citations" && hasScholar && citationOverview && citationOverview.total_papers_analyzed === 0 && !citationOverview.is_analyzing) ||
+                  (key === "buzz" && !buzz);
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setActiveSub(key)}
+                    className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${
+                      active
+                        ? "border-indigo-500 bg-indigo-50 text-indigo-700"
+                        : "border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                    }`}
+                  >
+                    <Icon className="h-3 w-3" />
+                    {label}
+                    {subUnconfigured && <span className="ml-0.5 inline-block h-1 w-1 rounded-full bg-amber-400" />}
+                    {subNeedsAction && !subUnconfigured && <span className="ml-0.5 inline-block h-1 w-1 rounded-full bg-red-500" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {/* Tip: unanalyzed features */}
           {(() => {
-            const tips: { label: string; tab: TabKey }[] = [];
+            const tips: { label: string; sub: SubKey }[] = [];
             if (hasScholar && citationOverview && citationOverview.total_papers_analyzed === 0 && !citationOverview.is_analyzing) {
-              tips.push({ label: "引用分析", tab: "citations" });
+              tips.push({ label: "引用分析", sub: "citations" });
             }
             if (!buzz) {
-              tips.push({ label: "社区讨论", tab: "buzz" });
+              tips.push({ label: "社区讨论", sub: "buzz" });
             }
             if (tips.length === 0) return null;
             return (
@@ -444,10 +676,10 @@ export default function ProfilePage() {
                 <span>
                   以下功能尚未启用：
                   {tips.map((t, i) => (
-                    <span key={t.tab}>
+                    <span key={t.sub}>
                       {i > 0 && "、"}
                       <button
-                        onClick={() => setActiveTab(t.tab)}
+                        onClick={() => { setActiveTab("impact"); setActiveSub(t.sub); }}
                         className="font-semibold underline decoration-indigo-300 underline-offset-2 transition hover:text-indigo-900"
                       >
                         {t.label}
@@ -463,19 +695,16 @@ export default function ProfilePage() {
           <div className="mt-4">
             <AnimatePresence mode="wait">
               <motion.div
-                key={activeTab}
+                key={`${activeTab}-${activeSub}`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.25, ease: "easeOut" }}
               >
-            {activeTab === "papers" && (
+            {activeTab === "output" && activeSub === "papers" && (
               <PublicationList papers={profile.papers} configured={hasScholar} />
             )}
-            {activeTab === "citations" && (
-              <CitationAnalysisView userId={userId} configured={hasScholar} initialData={citationOverview} />
-            )}
-            {activeTab === "repos" && (
+            {activeTab === "output" && activeSub === "repos" && (
               <RepoCard
                 repos={profile.repos}
                 configured={hasGithub}
@@ -484,7 +713,7 @@ export default function ProfilePage() {
                 onRepoDeleted={(repoId) => setProfile((p) => p ? { ...p, repos: p.repos.filter((r) => r.id !== repoId) } : p)}
               />
             )}
-            {activeTab === "hf" && (
+            {activeTab === "output" && activeSub === "hf" && (
               <HFModelCard
                 items={profile.hf_items}
                 configured={hasHF}
@@ -493,8 +722,13 @@ export default function ProfilePage() {
                 onItemDeleted={(itemId) => setProfile((p) => p ? { ...p, hf_items: p.hf_items.filter((h) => h.id !== itemId) } : p)}
               />
             )}
-            {activeTab === "growth" && <GrowthDashboard userId={userId} />}
-            {activeTab === "buzz" && (
+            {activeTab === "output" && activeSub === "timeline" && <Timeline entries={timeline} />}
+
+            {activeTab === "impact" && activeSub === "citations" && (
+              <CitationAnalysisView userId={userId} configured={hasScholar} initialData={citationOverview} />
+            )}
+            {activeTab === "impact" && activeSub === "growth" && <GrowthDashboard userId={userId} />}
+            {activeTab === "impact" && activeSub === "buzz" && (
               <BuzzCard
                 userId={userId}
                 buzz={buzz}
@@ -503,7 +737,31 @@ export default function ProfilePage() {
                 onRefresh={handleBuzzRefresh}
               />
             )}
-            {activeTab === "timeline" && <Timeline entries={timeline} />}
+
+            {activeTab === "evolution" && activeSub === "career" && (
+              <CareerCard
+                userId={userId}
+                data={career}
+                onUpdate={setCareer}
+                onRefresh={handleCareerRefresh}
+                refreshing={careerRefreshing}
+                elapsed={careerElapsed}
+              />
+            )}
+            {activeTab === "evolution" && activeSub === "capability" && (
+              <CapabilityCard
+                data={capability}
+                loading={capabilityLoading}
+                onRefresh={handleGenerateCapability}
+              />
+            )}
+            {activeTab === "evolution" && activeSub !== "career" && activeSub !== "capability" && (
+              <EvolutionTab
+                userId={userId}
+                data={trajectory}
+                onUpdate={setTrajectory}
+              />
+            )}
             {activeTab === "export" && (
               <SmartExporter
                 userId={userId}
@@ -525,6 +783,10 @@ export default function ProfilePage() {
           buzz={buzz}
           citationOverview={citationOverview}
           aiSummary={aiSummary}
+          persona={persona}
+          poem={poem}
+          poemRefreshing={poemRefreshing}
+          onGeneratePoem={handleGeneratePoem}
           onClose={() => setShowShare(false)}
         />
       )}

@@ -36,11 +36,14 @@ const METRIC_ORDER = [
   "ccf_a_count",
 ];
 
+type YScale = "auto" | "zero" | "delta";
+
 export default function GrowthDashboard({ userId }: Props) {
   const [data, setData] = useState<GrowthData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedMetric, setSelectedMetric] = useState("total_citations");
   const [days, setDays] = useState(30);
+  const [yScale, setYScale] = useState<YScale>("auto");
 
   const fetchData = useCallback(async () => {
     try {
@@ -83,7 +86,32 @@ export default function GrowthDashboard({ userId }: Props) {
   }
 
   const currentSeries = seriesMap.get(selectedMetric);
-  const chartData = currentSeries?.data || [];
+  const rawData = currentSeries?.data || [];
+
+  // Transform chart data based on yScale mode
+  const chartData = (() => {
+    if (rawData.length === 0) return rawData;
+    if (yScale === "delta") {
+      // Show daily delta (v[i] - v[i-1]), first point = 0
+      return rawData.map((p, i) => ({
+        date: p.date,
+        value: i === 0 ? 0 : p.value - rawData[i - 1].value,
+      }));
+    }
+    return rawData;
+  })();
+
+  // Y-axis domain: "auto" zooms to data range, "zero" starts at 0
+  const yDomain: [number | string, number | string] = (() => {
+    if (yScale === "zero") return [0, "auto"];
+    if (chartData.length === 0) return [0, "auto"];
+    const values = chartData.map((p) => p.value);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    if (min === max) return [min - 1, max + 1];
+    const pad = (max - min) * 0.1;
+    return [Math.floor(min - pad), Math.ceil(max + pad)];
+  })();
 
   const sortedMetrics = METRIC_ORDER.filter((m) => seriesMap.has(m));
   const otherMetrics = [...seriesMap.keys()].filter(
@@ -127,20 +155,38 @@ export default function GrowthDashboard({ userId }: Props) {
             );
           })}
         </div>
-        <div className="flex gap-1">
-          {[7, 30, 90].map((d) => (
-            <button
-              key={d}
-              onClick={() => setDays(d)}
-              className={`rounded px-2 py-0.5 text-xs font-medium transition ${
-                days === d
-                  ? "bg-gray-900 text-white"
-                  : "text-gray-400 hover:text-gray-600"
-              }`}
-            >
-              {d}天
-            </button>
-          ))}
+        <div className="flex items-center gap-3">
+          <div className="flex gap-0.5 rounded bg-gray-100 p-0.5">
+            {(["auto", "zero", "delta"] as YScale[]).map((s) => (
+              <button
+                key={s}
+                onClick={() => setYScale(s)}
+                className={`rounded px-2 py-0.5 text-[10px] font-medium transition ${
+                  yScale === s
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+                title={s === "auto" ? "自动缩放（突出变化）" : s === "zero" ? "从0开始（保留绝对值）" : "每日增量"}
+              >
+                {s === "auto" ? "自动" : s === "zero" ? "从0" : "增量"}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-1">
+            {[7, 30, 90].map((d) => (
+              <button
+                key={d}
+                onClick={() => setDays(d)}
+                className={`rounded px-2 py-0.5 text-xs font-medium transition ${
+                  days === d
+                    ? "bg-gray-900 text-white"
+                    : "text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                {d}天
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -161,6 +207,8 @@ export default function GrowthDashboard({ userId }: Props) {
               <YAxis
                 tick={{ fontSize: 10, fill: "#94a3b8" }}
                 tickFormatter={(v: number) => formatNumber(v)}
+                domain={yDomain}
+                allowDataOverflow
               />
               <Tooltip
                 contentStyle={{

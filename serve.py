@@ -6,13 +6,16 @@ import os
 BACKEND = "http://127.0.0.1:8001"
 DIST = os.path.join(os.path.dirname(__file__), "frontend", "dist")
 
+# Force urllib NOT to pick up corporate http_proxy env vars when proxying to localhost
+_PROXY_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=DIST, **kwargs)
 
     def do_GET(self):
-        if self.path.startswith("/api"):
+        if self.path.startswith("/api") or self.path.startswith("/static/"):
             self._proxy()
         else:
             # SPA fallback: serve index.html for non-file paths
@@ -33,9 +36,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             headers={"Content-Type": self.headers.get("Content-Type", "application/json")},
         )
         try:
-            with urllib.request.urlopen(req) as resp:
+            with _PROXY_OPENER.open(req) as resp:
                 self.send_response(resp.status)
-                self.send_header("Content-Type", resp.headers.get("Content-Type", "application/json"))
+                # Pass through content type + cache headers so images render correctly
+                for h in ("Content-Type", "Content-Length", "Cache-Control", "ETag"):
+                    v = resp.headers.get(h)
+                    if v:
+                        self.send_header(h, v)
                 self.end_headers()
                 self.wfile.write(resp.read())
         except Exception as e:

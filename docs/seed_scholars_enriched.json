@@ -1,0 +1,1902 @@
+{
+  "_meta": {
+    "note": "honors 字段为保守标注：仅填入我高度确信的荣誉（图灵奖/院士级别、以及公开资料清晰的 ACM/IEEE Fellow 与部分长江/杰青）。留空不代表没有荣誉，仅代表未核实。导入前建议批量核对。",
+    "honor_vocab": {
+      "international": [
+        "Turing Award",
+        "ACM Fellow",
+        "IEEE Fellow",
+        "AAAI Fellow",
+        "FRS",
+        "NAE",
+        "NAS"
+      ],
+      "cn": [
+        "院士",
+        "长江学者",
+        "杰青",
+        "优青",
+        "海外优青",
+        "青年长江"
+      ]
+    }
+  },
+  "directions": [
+    "llm",
+    "cv",
+    "vlm",
+    "systems",
+    "theory",
+    "rl"
+  ],
+  "tiers": {
+    "senior": "资深（长期建立学派/地位）",
+    "mid": "中坚（主导当下工作）",
+    "rising": "新锐（首篇论文 < 10 年）"
+  },
+  "scholars": [
+    {
+      "name": "Christopher Manning",
+      "affiliation": "Stanford",
+      "direction": "llm",
+      "tier": "senior",
+      "honors": [
+        "ACM Fellow"
+      ]
+    },
+    {
+      "name": "Yoshua Bengio",
+      "affiliation": "Mila",
+      "direction": "llm",
+      "tier": "senior",
+      "honors": [
+        "Turing Award",
+        "FRS"
+      ]
+    },
+    {
+      "name": "Dan Jurafsky",
+      "affiliation": "Stanford",
+      "direction": "llm",
+      "tier": "senior",
+      "honors": [
+        "ACM Fellow"
+      ]
+    },
+    {
+      "name": "Jason Weston",
+      "affiliation": "Meta FAIR",
+      "direction": "llm",
+      "tier": "senior",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Noah A. Smith",
+      "affiliation": "UW / AI2",
+      "direction": "llm",
+      "tier": "senior",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "ACL Fellow"
+        ],
+        "evidence": [
+          {
+            "honor": "ACL Fellow",
+            "year": 2020,
+            "source": "https://www.aclweb.org/portal/content/acl-fellows-2020",
+            "note": "ACL 官方公告列出 Noah Smith 为 2020 年 ACL Fellow。"
+          },
+          {
+            "honor": "ACL Fellow",
+            "year": 2020,
+            "source": "https://www.cs.washington.edu/people/faculty/noah-smith/",
+            "note": "UW 官方个人主页写明其于 2020 年当选 ACL Fellow。"
+          },
+          {
+            "honor": "ACL Fellow",
+            "year": 2020,
+            "source": "https://allenai.org/newsletters/archive/2020-12-newsletter.html",
+            "note": "AI2 官方新闻简报确认 Noah Smith 为 2020 年 ACL Fellow。"
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Luke Zettlemoyer",
+      "affiliation": "UW / Meta",
+      "direction": "llm",
+      "tier": "senior",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "ACL Fellow",
+          "AI2050 Senior Fellow"
+        ],
+        "evidence": [
+          {
+            "honor": "ACL Fellow",
+            "year": 2021,
+            "source": "https://www.aclweb.org/portal/content/acl-fellows-2021",
+            "note": "ACL 官方公告列出其为 2021 年当选 Fellow。"
+          },
+          {
+            "honor": "ACL Fellow",
+            "year": 2021,
+            "source": "https://news.cs.washington.edu/2022/02/23/allen-schools-luke-zettlemoyer-elected-fellow-of-the-association-for-computational-linguistics-for-expanding-the-frontiers-of-natural-language-processing/",
+            "note": "华盛顿大学官方新闻报道其当选 ACL Fellow（报道时间 2022，Fellow 年度为 2021）。"
+          },
+          {
+            "honor": "ACL Fellow",
+            "year": 2021,
+            "source": "https://homes.cs.washington.edu/~lsz/",
+            "note": "个人主页明确写明“named an ACL Fellow (2021)”。"
+          },
+          {
+            "honor": "AI2050 Senior Fellow",
+            "year": 2025,
+            "source": "https://ai2050.schmidtsciences.org/fellow/luke-zettlemoyer/",
+            "note": "Schmidt Sciences/AI2050 官方 Fellow 页面标注“2025 Senior Fellow”。"
+          },
+          {
+            "honor": "AI2050 Senior Fellow",
+            "year": 2025,
+            "source": "https://www.schmidtsciences.org/2025-ai2050-fellows-announcement/",
+            "note": "Schmidt Sciences 官方公告宣布 2025 届 AI2050 Fellows（含 Senior Fellows）。"
+          },
+          {
+            "honor": "AI2050 Senior Fellow",
+            "year": 2025,
+            "source": "https://shass.mit.edu/mit-affiliates-named-2025-schmidt-sciences-ai2050-fellows/",
+            "note": "MIT 官方新闻列出 Luke Zettlemoyer 被授予 2025 AI2050 Senior Fellow。"
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Percy Liang",
+      "affiliation": "Stanford",
+      "direction": "llm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "PECASE",
+          "IJCAI Computers and Thought Award",
+          "NSF CAREER",
+          "Sloan Fellow",
+          "MSR Faculty Fellow",
+          "AI2050 Senior Fellow"
+        ],
+        "evidence": [
+          {
+            "honor": "PECASE",
+            "year": 2016,
+            "source": "https://www.nsf.gov/honorary-awards/pecase/recipients/percy-liang",
+            "note": "NSF官方PECASE获奖者页面列出Percy Liang（年份2016）"
+          },
+          {
+            "honor": "PECASE",
+            "year": 2016,
+            "source": "https://engineering.stanford.edu/people/percy-liang",
+            "note": "斯坦福工程学院个人简介列出其获PECASE（常见写法显示2019为颁奖年份）"
+          },
+          {
+            "honor": "IJCAI Computers and Thought Award",
+            "year": 2016,
+            "source": "https://ijcai-16.org/index.php/welcome/view/awards/",
+            "note": "IJCAI-16官网写明其为2016年Computers and Thought Award获得者"
+          },
+          {
+            "honor": "IJCAI Computers and Thought Award",
+            "year": 2016,
+            "source": "https://cs.stanford.edu/~pliang/",
+            "note": "个人主页列出2016年获IJCAI Computers and Thought Award"
+          },
+          {
+            "honor": "NSF CAREER",
+            "year": 2016,
+            "source": "https://engineering.stanford.edu/people/percy-liang",
+            "note": "斯坦福工程学院个人简介列出2016年获NSF CAREER"
+          },
+          {
+            "honor": "NSF CAREER",
+            "year": 2016,
+            "source": "https://cs.stanford.edu/~pliang/",
+            "note": "个人主页列出2016年获NSF CAREER"
+          },
+          {
+            "honor": "Sloan Fellow",
+            "year": 2015,
+            "source": "https://engineering.stanford.edu/news/jennfier-dionne-percy-liang-elected-sloan-research-fellows",
+            "note": "斯坦福工程学院新闻报道其当选2015年Sloan Research Fellow"
+          },
+          {
+            "honor": "Sloan Fellow",
+            "year": 2015,
+            "source": "https://statistics.stanford.edu/news/percy-liang-named-sloan-research-fellow",
+            "note": "斯坦福统计系新闻确认其当选Sloan Research Fellow（2015）"
+          },
+          {
+            "honor": "MSR Faculty Fellow",
+            "year": 2014,
+            "source": "https://engineering.stanford.edu/people/percy-liang",
+            "note": "斯坦福工程学院个人简介列出2014年微软研究院青年教师奖学金"
+          },
+          {
+            "honor": "MSR Faculty Fellow",
+            "year": 2014,
+            "source": "https://cs.stanford.edu/~pliang/",
+            "note": "个人主页列出2014年Microsoft Research Faculty Fellowship"
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Tatsunori Hashimoto",
+      "affiliation": "Stanford",
+      "direction": "llm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "Sloan Research Fellow",
+          "NSF CAREER",
+          "Kavli Fellow"
+        ],
+        "evidence": [
+          {
+            "honor": "Sloan Research Fellow",
+            "year": 2026,
+            "source": "https://sloan.org/fellowships/2026-Fellows",
+            "note": "Sloan Foundation官方2026获选名单在计算机科学栏列出“Tatsunori B. Hashimoto (Stanford University)”。"
+          },
+          {
+            "honor": "Sloan Research Fellow",
+            "year": 2026,
+            "source": "https://news.stanford.edu/stories/2026/02/faculty-sloan-research-fellows",
+            "note": "Stanford News官方报道将Tatsunori Hashimoto列为2026年Sloan Research Fellow之一。"
+          },
+          {
+            "honor": "NSF CAREER",
+            "year": null,
+            "source": "https://stat.mit.edu/calendar_event/hashimoto/",
+            "note": "MIT统计与数据科学中心官方活动页面个人简介写明其为“recipient of the NSF CAREER”。"
+          },
+          {
+            "honor": "NSF CAREER",
+            "year": null,
+            "source": "https://idss.mit.edu/calendar/hashimoto/",
+            "note": "MIT IDSS官方活动页面个人简介同样注明其获得NSF CAREER。"
+          },
+          {
+            "honor": "Kavli Fellow",
+            "year": 2023,
+            "source": "https://www.nasonline.org/symposia/2023-u-s-kavli-frontiers-of-science/",
+            "note": "美国国家科学院(NAS)“2023 U.S. Kavli Frontiers of Science”官方页面将其列为分会场报告人。"
+          },
+          {
+            "honor": "Kavli Fellow",
+            "year": null,
+            "source": "https://www.nasonline.org/news/nas-selects-2024-kavli-fellows/",
+            "note": "NAS官方说明参加Kavli Frontiers of Science的入选者被称为“Kavli Fellows”，与其2023年参会可对应。"
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Jacob Devlin",
+      "affiliation": "Google",
+      "direction": "llm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Colin Raffel",
+      "affiliation": "UNC / HuggingFace",
+      "direction": "llm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "CIFAR AI Chair",
+          "NSF CAREER"
+        ],
+        "evidence": [
+          {
+            "honor": "CIFAR AI Chair",
+            "year": null,
+            "source": "https://cifar.ca/bios/colin-raffel/",
+            "note": "CIFAR 官方个人页面注明 Appointment: Canada CIFAR AI Chair"
+          },
+          {
+            "honor": "CIFAR AI Chair",
+            "year": null,
+            "source": "https://vectorinstitute.ai/team/colin-raffel/",
+            "note": "Vector Institute 官方团队页面标注其为 Canada CIFAR AI Chair"
+          },
+          {
+            "honor": "NSF CAREER",
+            "year": 2022,
+            "source": "https://cs.unc.edu/news-article/raffel-receives-nsf-career-award/",
+            "note": "UNC 计算机系官方新闻宣布其获 2022 年 NSF CAREER Award"
+          },
+          {
+            "honor": "NSF CAREER",
+            "year": 2022,
+            "source": "https://colinraffel.com/cv.html",
+            "note": "本人主页/CV 列出 NSF CAREER Award (2022)"
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Sebastian Ruder",
+      "affiliation": "Cohere",
+      "direction": "llm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Douwe Kiela",
+      "affiliation": "Contextual AI",
+      "direction": "llm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Tim Dettmers",
+      "affiliation": "CMU / AI2",
+      "direction": "llm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Alexander Rush",
+      "affiliation": "Cornell",
+      "direction": "llm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Tri Dao",
+      "affiliation": "Princeton",
+      "direction": "llm",
+      "tier": "rising",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "AI2050 Fellow"
+        ],
+        "evidence": [
+          {
+            "honor": "AI2050 Fellow",
+            "year": 2025,
+            "source": "https://ai2050.schmidtsciences.org/fellow/tri-dao/",
+            "note": "AI2050 Early Career Fellow（官方Fellows页面）"
+          },
+          {
+            "honor": "AI2050 Fellow",
+            "year": 2025,
+            "source": "https://www.cs.princeton.edu/news/tri-dao-and-ellen-zhong-named-ai2050-fellows-schmidt-sciences",
+            "note": "普林斯顿计算机系新闻：被授予AI2050 Early Career Fellow"
+          },
+          {
+            "honor": "AI2050 Fellow",
+            "year": 2025,
+            "source": "https://dof.princeton.edu/news/2025/tri-dao-and-ellen-zhong-named-ai2050-fellows-schmidt-sciences",
+            "note": "普林斯顿教务长办公室公告：AI2050 Early Career Fellow"
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Jared Kaplan",
+      "affiliation": "Anthropic",
+      "direction": "llm",
+      "tier": "rising",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "Sloan Research Fellowship",
+          "Hertz Fellow",
+          "NSF CAREER"
+        ],
+        "evidence": [
+          {
+            "honor": "Sloan Research Fellowship",
+            "year": 2014,
+            "source": "https://hub.jhu.edu/gazette/2014/march-april/jhu-sloan-fellowships/",
+            "note": "Johns Hopkins Hub宣布Jared Kaplan为2014年Sloan Research Fellowship获得者。"
+          },
+          {
+            "honor": "Sloan Research Fellowship",
+            "year": 2014,
+            "source": "https://physics-astronomy.jhu.edu/2014/02/18/jared-kaplan-and-tyrel-mcqueen-selected-for-sloan-research-fellowship/",
+            "note": "JHU物理与天文系新闻稿确认其入选Sloan Research Fellowship（2014）。"
+          },
+          {
+            "honor": "Sloan Research Fellowship",
+            "year": 2014,
+            "source": "https://en.wikipedia.org/wiki/Jared_Kaplan",
+            "note": "Wikipedia“Honors and recognition”条目列出其获Sloan Research Fellowship。"
+          },
+          {
+            "honor": "Hertz Fellow",
+            "year": 2005,
+            "source": "https://www.hertzfoundation.org/people/jared-kaplan/",
+            "note": "Hertz基金会官方名录显示其为2005年Hertz Fellow。"
+          },
+          {
+            "honor": "Hertz Fellow",
+            "year": 2005,
+            "source": "https://krieger.jhu.edu/physics/wp-content/uploads/sites/11/2013/05/JaredKaplanCVFall2018.pdf",
+            "note": "其在JHU官网托管的个人简历列有“Hertz Foundation Graduate Fellowship (2005–2009)”。"
+          },
+          {
+            "honor": "NSF CAREER",
+            "year": 2015,
+            "source": "https://krieger.jhu.edu/physics/wp-content/uploads/sites/11/2013/05/JaredKaplanCVFall2018.pdf",
+            "note": "个人简历列出“NSF CAREER Grant, Award Number PHY-1454083, 2015–2020”。"
+          },
+          {
+            "honor": "NSF CAREER",
+            "year": 2015,
+            "source": "https://physics-astronomy.jhu.edu/directory/jared-kaplan/",
+            "note": "JHU官方个人主页写明其研究获得NSF CAREER资助。"
+          },
+          {
+            "honor": "NSF CAREER",
+            "year": 2015,
+            "source": "https://en.wikipedia.org/wiki/Jared_Kaplan",
+            "note": "Wikipedia注明其获NSF CAREER奖（PHY-1454083）。"
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Aleksander Madry",
+      "affiliation": "MIT / OpenAI",
+      "direction": "llm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "Sloan Fellow",
+          "NSF CAREER",
+          "ICM邀请报告",
+          "Presburger Award"
+        ],
+        "evidence": [
+          {
+            "honor": "Sloan Fellow",
+            "year": 2016,
+            "source": "https://news.mit.edu/2016/eleven-mit-researchers-win-sloan-research-fellowships-0223",
+            "note": "MIT官方新闻列出 Aleksander Madry 为2016年Sloan Research Fellow。"
+          },
+          {
+            "honor": "Sloan Fellow",
+            "year": 2016,
+            "source": "https://madry.mit.edu/docs/Aleksander_Madry_CV.pdf",
+            "note": "个人主页CV列示“Alfred P. Sloan Research Fellowship (2016)”。"
+          },
+          {
+            "honor": "NSF CAREER",
+            "year": 2015,
+            "source": "https://toc.csail.mit.edu/awards",
+            "note": "MIT CSAIL ToC官网“NSF Career Award”名单包含 Aleksander Madry（2015）。"
+          },
+          {
+            "honor": "NSF CAREER",
+            "year": 2015,
+            "source": "https://madry.mit.edu/docs/Aleksander_Madry_CV.pdf",
+            "note": "个人主页CV列示“NSF CAREER Award (2015)”。"
+          },
+          {
+            "honor": "ICM邀请报告",
+            "year": 2018,
+            "source": "https://www.youtube.com/watch?v=P7f4tJV2Gyg",
+            "note": "ICM2018官方频道收录其分组邀请报告“Gradients and flows…（Mathematical Aspects of Computer Science）”。"
+          },
+          {
+            "honor": "ICM邀请报告",
+            "year": 2018,
+            "source": "https://pl.wikipedia.org/wiki/Aleksander_M%C4%85dry",
+            "note": "维基页面注明其为ICM 2018受邀报告人并给出报告题目。"
+          },
+          {
+            "honor": "Presburger Award",
+            "year": 2018,
+            "source": "https://www.eatcs.org/index.php/component/content/article/1-news/2703-presburger-award-2018-",
+            "note": "EATCS官网公告其获2018年Presburger Award。"
+          },
+          {
+            "honor": "Presburger Award",
+            "year": 2018,
+            "source": "https://www.csail.mit.edu/news/mit-professors-win-awards-research-theoretical-computer-science",
+            "note": "MIT CSAIL新闻报道其获得2018年EATCS Presburger Award。"
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Zhiyuan Liu",
+      "cn": "刘知远",
+      "affiliation": "Tsinghua",
+      "direction": "llm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "万人计划-青年拔尖"
+        ],
+        "evidence": [
+          {
+            "honor": "万人计划-青年拔尖",
+            "year": 2020,
+            "source": "https://lzy.thunlp.org/index_cn.html",
+            "note": "个人主页（中文版）直接列出“2020. 国家青年拔尖人才计划”"
+          },
+          {
+            "honor": "万人计划-青年拔尖",
+            "year": null,
+            "source": "https://lzy.thunlp.org/bio.html",
+            "note": "个人主页简历页写明“入选国家万人计划青年拔尖人才”"
+          }
+        ],
+        "confidence": "medium"
+      }
+    },
+    {
+      "name": "Maosong Sun",
+      "cn": "孙茂松",
+      "affiliation": "Tsinghua",
+      "direction": "llm",
+      "tier": "senior",
+      "honors": [
+        "长江学者"
+      ]
+    },
+    {
+      "name": "Minlie Huang",
+      "cn": "黄民烈",
+      "affiliation": "Tsinghua",
+      "direction": "llm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "杰青"
+        ],
+        "evidence": [
+          {
+            "honor": "杰青",
+            "year": 2021,
+            "source": "https://www.xyc.tsinghua.edu.cn/info/1107/1874.htm",
+            "note": "清华大学新雅书院教师主页列明“国家杰出青年科学基金”资助（2021），并列出对应项目周期（2022–2026）。"
+          }
+        ],
+        "confidence": "medium"
+      }
+    },
+    {
+      "name": "Xipeng Qiu",
+      "cn": "邱锡鹏",
+      "affiliation": "Fudan",
+      "direction": "llm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "CAAI Fellow",
+          "中国科协青年人才托举工程"
+        ],
+        "evidence": [
+          {
+            "honor": "CAAI Fellow",
+            "year": 2024,
+            "source": "https://www.caai.cn/site/content/4280.html",
+            "note": "CAAI官网公布2024年度会士增选名单，包含“邱锡鹏”。"
+          },
+          {
+            "honor": "CAAI Fellow",
+            "year": 2024,
+            "source": "https://ai.fudan.edu.cn/qxp/list.htm",
+            "note": "复旦大学官方教师页面显示其为中国人工智能学会会士。"
+          },
+          {
+            "honor": "中国科协青年人才托举工程",
+            "year": 2015,
+            "source": "https://cs.fudan.edu.cn/3e/e4/c25921a278244/page.htm",
+            "note": "复旦大学计算与智能创新学院官网注明其2015年入选首届中国科协青年人才托举工程。"
+          },
+          {
+            "honor": "中国科协青年人才托举工程",
+            "year": 2015,
+            "source": "https://iipl.fudan.edu.cn/70/d8/c45862a684248/page.htm",
+            "note": "复旦大学计算机学院网站亦记载其2015年入选该人才计划。"
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Wanxiang Che",
+      "cn": "车万翔",
+      "affiliation": "HIT",
+      "direction": "llm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "国家级青年人才",
+          "龙江学者青年学者"
+        ],
+        "evidence": [
+          {
+            "honor": "国家级青年人才",
+            "year": null,
+            "source": "https://chewanxiang.com/zh/",
+            "note": "个人主页直接表述其为“国家级青年人才”。"
+          },
+          {
+            "honor": "国家级青年人才",
+            "year": null,
+            "source": "https://computing.hit.edu.cn/2024/0619/c11270a347208/page.htm",
+            "note": "哈工大计算学部新闻称其为“国家级青年人才”。"
+          },
+          {
+            "honor": "国家级青年人才",
+            "year": null,
+            "source": "https://today.hit.edu.cn/article/2024/12/05/118095",
+            "note": "哈工大校内综合信息网新闻称其为“国家青年人才”。"
+          },
+          {
+            "honor": "龙江学者青年学者",
+            "year": 2019,
+            "source": "https://news.hit.edu.cn/_t736/2019/1220/c1510a217825/page.htm",
+            "note": "哈工大新闻网公布2019年名单，明确列出车万翔为“龙江学者”青年学者。"
+          },
+          {
+            "honor": "龙江学者青年学者",
+            "year": 2019,
+            "source": "https://ir.hit.edu.cn/2019/1223/c19589a357039/page.htm",
+            "note": "哈工大社会计算与信息检索研究中心新闻报道其入选2019年“龙江学者”青年学者。"
+          },
+          {
+            "honor": "龙江学者青年学者",
+            "year": 2019,
+            "source": "https://chewanxiang.com/zh/",
+            "note": "个人主页“所获奖项/称号”中列有“龙江学者”青年学者（2019/12）。"
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Yue Zhang",
+      "cn": "张岳",
+      "affiliation": "Westlake",
+      "direction": "llm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "ACL Fellow"
+        ],
+        "evidence": [
+          {
+            "honor": "ACL Fellow",
+            "year": 2025,
+            "source": "https://www.aclweb.org/portal/content/acl-fellows-2025",
+            "note": "ACL官网公布2025年Fellows名单，包含Yue Zhang（Westlake University）。"
+          },
+          {
+            "honor": "ACL Fellow",
+            "year": null,
+            "source": "https://www.westlake.edu.cn/faculty/nlp/yue-zhang.html",
+            "note": "西湖大学官网个人主页标注其为“ACL fellow”。"
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Ming Zhou",
+      "cn": "周明",
+      "affiliation": "Langboat",
+      "direction": "llm",
+      "tier": "senior",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "ACL Fellow"
+        ],
+        "evidence": [
+          {
+            "honor": "ACL Fellow",
+            "year": 2023,
+            "source": "https://www.aclweb.org/portal/content/acl-fellows-2023",
+            "note": "ACL官方公告列出“Ming Zhou – Langboat Ltd.”为2023年ACL Fellow"
+          },
+          {
+            "honor": "ACL Fellow",
+            "year": 2023,
+            "source": "https://www.langboat.com/en/about/resume",
+            "note": "澜舟科技官网个人简介注明其为ACL Fellow"
+          },
+          {
+            "honor": "ACL Fellow",
+            "year": 2023,
+            "source": "https://en.wikipedia.org/wiki/Zhou_Ming_(linguist)",
+            "note": "Wikipedia条目列出其为2023年ACL Fellow"
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Weizhu Chen",
+      "affiliation": "Microsoft",
+      "direction": "llm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Xin Zhao",
+      "cn": "赵鑫",
+      "affiliation": "RUC",
+      "direction": "llm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "优青"
+        ],
+        "evidence": [
+          {
+            "honor": "优青",
+            "year": null,
+            "source": "https://gsai.ruc.edu.cn/waynexinzhao",
+            "note": "中国人民大学高瓴人工智能学院官网个人页面写明“国家优青项目获得者”。"
+          },
+          {
+            "honor": "优青",
+            "year": null,
+            "source": "https://www.nsfc.gov.cn/csc/20345/20348/pdf/2023/202305-786-792.pdf",
+            "note": "国家自然科学基金委员会官网刊载文章的作者简介注明其“获得国家自然科学基金优秀青年科学基金项目资助”。"
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Yankai Lin",
+      "cn": "林衍凯",
+      "affiliation": "RUC / Zhipu",
+      "direction": "llm",
+      "tier": "rising",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Yansong Feng",
+      "cn": "冯岩松",
+      "affiliation": "PKU",
+      "direction": "llm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Xiaojun Wan",
+      "cn": "万小军",
+      "affiliation": "PKU",
+      "direction": "llm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Jitendra Malik",
+      "affiliation": "Berkeley",
+      "direction": "cv",
+      "tier": "senior",
+      "honors": [
+        "NAE",
+        "ACM Fellow",
+        "IEEE Fellow"
+      ]
+    },
+    {
+      "name": "Trevor Darrell",
+      "affiliation": "Berkeley",
+      "direction": "cv",
+      "tier": "senior",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Andrew Zisserman",
+      "affiliation": "Oxford",
+      "direction": "cv",
+      "tier": "senior",
+      "honors": [
+        "FRS",
+        "ACM Fellow",
+        "IEEE Fellow"
+      ]
+    },
+    {
+      "name": "Jean Ponce",
+      "affiliation": "NYU / INRIA",
+      "direction": "cv",
+      "tier": "senior",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "IEEE Fellow"
+        ],
+        "evidence": [
+          {
+            "honor": "IEEE Fellow",
+            "year": 2003,
+            "source": "https://www.di.ens.fr/~ponce/cv.pdf",
+            "note": "ENS个人主页CV“Honors and Awards”列明：IEEE Fellow (2003)。"
+          },
+          {
+            "honor": "IEEE Fellow",
+            "year": 2003,
+            "source": "https://www.prairie-psai.fr/research-and-innovation/community/ponce-jean/",
+            "note": "PRAIRIE 3IA官方页面写明：IEEE Fellow (2003)。"
+          },
+          {
+            "honor": "IEEE Fellow",
+            "year": null,
+            "source": "https://ieeexplore.ieee.org/author/37282647000",
+            "note": "IEEE Xplore 作者页面标注其为“Fellow, IEEE”。"
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Alexei Efros",
+      "affiliation": "Berkeley",
+      "direction": "cv",
+      "tier": "senior",
+      "honors": [
+        "ACM Fellow"
+      ]
+    },
+    {
+      "name": "Cordelia Schmid",
+      "affiliation": "INRIA / Google",
+      "direction": "cv",
+      "tier": "senior",
+      "honors": [
+        "ACM Fellow",
+        "IEEE Fellow"
+      ]
+    },
+    {
+      "name": "Kaiming He",
+      "cn": "何恺明",
+      "affiliation": "MIT / FAIR",
+      "direction": "cv",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Ross Girshick",
+      "affiliation": "FAIR",
+      "direction": "cv",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Ali Farhadi",
+      "affiliation": "UW / AI2",
+      "direction": "cv",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Piotr Dollar",
+      "affiliation": "FAIR",
+      "direction": "cv",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Phillip Isola",
+      "affiliation": "MIT",
+      "direction": "cv",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "Packard Fellow",
+          "Sloan Research Fellow"
+        ],
+        "evidence": [
+          {
+            "honor": "Packard Fellow",
+            "year": 2021,
+            "source": "https://www.packard.org/fellow/phillip-isola/",
+            "note": "Packard Fellowship for Science and Engineering官方页面列出Phillip Isola为2021年获选Fellow。"
+          },
+          {
+            "honor": "Packard Fellow",
+            "year": 2021,
+            "source": "https://news.mit.edu/2022/school-engineering-first-quarter-2022-awards-0429",
+            "note": "MIT新闻汇总提到Isola于2021-10-14获得Packard Fellowship，属官方佐证。"
+          },
+          {
+            "honor": "Sloan Research Fellow",
+            "year": 2022,
+            "source": "https://news.mit.edu/2022/seven-mit-named-2022-sloan-research-fellows-0216",
+            "note": "MIT官方新闻点名Phillip Isola入选2022年Sloan Research Fellows。"
+          },
+          {
+            "honor": "Sloan Research Fellow",
+            "year": 2022,
+            "source": "https://sloan.org/grant-detail/fr-2022-18524",
+            "note": "Sloan基金会官网Grant记录：Alfred P. Sloan Research Fellowship for Phillip Isola（Computer Science）。"
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Jia Deng",
+      "affiliation": "Princeton",
+      "direction": "cv",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "Sloan Fellow"
+        ],
+        "evidence": [
+          {
+            "honor": "Sloan Fellow",
+            "year": 2018,
+            "source": "https://sloan.org/storage/app/media/programs/SRF/2018-SRF-NYTimes_Ad.pdf",
+            "note": "Sloan Foundation’s 2018 Fellows announcement lists 'Jia Deng, University of Michigan' under Computer Science."
+          },
+          {
+            "honor": "Sloan Fellow",
+            "year": 2018,
+            "source": "https://www.cs.princeton.edu/~jiadeng/",
+            "note": "Princeton CS homepage lists 'Alfred P. Sloan Research Fellowship, 2018' in Awards and Honors."
+          },
+          {
+            "honor": "Sloan Fellow",
+            "year": 2018,
+            "source": "https://ece.engin.umich.edu/stories/jia-deng-selected-for-sloan-research-fellowship",
+            "note": "University of Michigan official news post announces Jia Deng’s selection as a 2018 Sloan Research Fellow."
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Saining Xie",
+      "affiliation": "NYU",
+      "direction": "cv",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Mathilde Caron",
+      "affiliation": "DeepMind",
+      "direction": "cv",
+      "tier": "rising",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Bowen Cheng",
+      "affiliation": "FAIR",
+      "direction": "cv",
+      "tier": "rising",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Xinlei Chen",
+      "affiliation": "FAIR",
+      "direction": "cv",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Fei-Fei Li",
+      "cn": "李飞飞",
+      "affiliation": "Stanford",
+      "direction": "cv",
+      "tier": "senior",
+      "honors": [
+        "NAE",
+        "ACM Fellow"
+      ]
+    },
+    {
+      "name": "Yangqing Jia",
+      "cn": "贾扬清",
+      "affiliation": "Lepton AI",
+      "direction": "cv",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Shaoqing Ren",
+      "cn": "任少卿",
+      "affiliation": "Momenta",
+      "direction": "cv",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Xinggang Wang",
+      "cn": "王兴刚",
+      "affiliation": "HUST",
+      "direction": "cv",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "万人计划-青年拔尖",
+          "青托"
+        ],
+        "evidence": [
+          {
+            "honor": "万人计划-青年拔尖",
+            "year": null,
+            "source": "https://faculty.hust.edu.cn/xwang/zh_CN/index.htm",
+            "note": "华中科技大学教师主页明确标注其为“国家‘万人计划’青年拔尖人才”。"
+          },
+          {
+            "honor": "万人计划-青年拔尖",
+            "year": null,
+            "source": "https://faculty.hust.edu.cn/xwang/en/index.htm",
+            "note": "华中科技大学英文主页同样注明该头衔。"
+          },
+          {
+            "honor": "青托",
+            "year": 2015,
+            "source": "https://www.cast.org.cn/xs/XSDT/art/2016/art_fa0351ad1c4f4bf99b86b8035632bb9e.html",
+            "note": "中国科协公布2015–2017年度“青年人才托举工程”入选名单（附件），其姓名在名单中。"
+          },
+          {
+            "honor": "青托",
+            "year": 2015,
+            "source": "https://china-csm.org/tongzhitonggao/391.html",
+            "note": "中国计量测试学会转载的同名单在正文中列出“王兴刚（华中科技大学）”。"
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Yu Qiao",
+      "cn": "乔宇",
+      "affiliation": "Shanghai AI Lab",
+      "direction": "cv",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "IAPR Fellow",
+          "万人计划-科技创新领军人才",
+          "中青年科技创新领军人才",
+          "中科院百人计划",
+          "上海市优秀学术带头人"
+        ],
+        "evidence": [
+          {
+            "honor": "IAPR Fellow",
+            "year": 2024,
+            "source": "https://iapr.org/fellows/chronological-list-of-iapr-fellows/",
+            "note": "IAPR 官方名单显示 Yu Qiao（China）入选 2024 届 IAPR Fellow"
+          },
+          {
+            "honor": "万人计划-科技创新领军人才",
+            "year": null,
+            "source": "https://www.shlab.org.cn/news/5443038",
+            "note": "上海人工智能实验室官网人物简介称“入选万人计划领军人才”（对应万人计划领军人才类别）"
+          },
+          {
+            "honor": "万人计划-科技创新领军人才",
+            "year": null,
+            "source": "https://saai.net.cn/1035.html",
+            "note": "深圳市人工智能学会官网个人页面称“入选万人计划领军人才”"
+          },
+          {
+            "honor": "中青年科技创新领军人才",
+            "year": null,
+            "source": "https://www.shlab.org.cn/news/5443038",
+            "note": "上海人工智能实验室官网人物简介称“科技部中青年科技创新领军人才”"
+          },
+          {
+            "honor": "中青年科技创新领军人才",
+            "year": null,
+            "source": "https://jcjs.siat.ac.cn/cn/expert?id=866cd659-455a-4a32-b9ef-eb9c5367e3a3",
+            "note": "中科院深圳先进技术研究院官网写明“入选科技部中青年科技创新领军人才”"
+          },
+          {
+            "honor": "中科院百人计划",
+            "year": null,
+            "source": "https://csce.suat-sz.edu.cn/info/1008/1186.htm",
+            "note": "深圳理工大学计算机科学与人工智能学院官网写明“中科院百人计划”"
+          },
+          {
+            "honor": "中科院百人计划",
+            "year": null,
+            "source": "https://saai.net.cn/1035.html",
+            "note": "深圳市人工智能学会官网写明“中科院百人计划”"
+          },
+          {
+            "honor": "上海市优秀学术带头人",
+            "year": null,
+            "source": "https://csce.suat-sz.edu.cn/info/1008/1186.htm",
+            "note": "深圳理工大学官网写明“上海市优秀学术带头人”"
+          },
+          {
+            "honor": "上海市优秀学术带头人",
+            "year": null,
+            "source": "https://szs.siat.ac.cn/siat/2025-02/21/article_2025022803253088013.html",
+            "note": "中科院深圳先进技术研究院官网个人简介写明“上海市优秀学术带头人”"
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Dahua Lin",
+      "cn": "林达华",
+      "affiliation": "CUHK",
+      "direction": "cv",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Jingdong Wang",
+      "cn": "王井东",
+      "affiliation": "Baidu",
+      "direction": "cv",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "CAE 外籍院士",
+          "IEEE Fellow",
+          "IAPR Fellow",
+          "ACM 杰出会员"
+        ],
+        "evidence": [
+          {
+            "honor": "IEEE Fellow",
+            "year": 2022,
+            "source": "https://signalprocessingsociety.org/newsletter/2022/01/46-sps-members-elevated-fellow",
+            "note": "IEEE Signal Processing Society公告列出其入选2022年IEEE Fellow。"
+          },
+          {
+            "honor": "IEEE Fellow",
+            "year": 2022,
+            "source": "https://ieeexplore.ieee.org/author/37406478900",
+            "note": "IEEE Xplore作者页标注其为“Fellow, IEEE”，单位为Baidu。"
+          },
+          {
+            "honor": "IAPR Fellow",
+            "year": 2018,
+            "source": "https://iapr.org/fellows/alphabetical-list-of-iapr-fellows/",
+            "note": "IAPR官网按字母表列出：Jingdong Wang（China）– 2018。"
+          },
+          {
+            "honor": "IAPR Fellow",
+            "year": 2018,
+            "source": "https://iapr.org/docs/newsletters/2020-Vol-42-No-4.pdf",
+            "note": "IAPR官方通讯提及“Jingdong Wang, IAPR Fellow”。"
+          },
+          {
+            "honor": "CAE 外籍院士",
+            "year": null,
+            "source": "https://widgets.cae-acg.ca/feeds/directory/directory/action/Listing/value/12835/cid/1498/id/2201/Wang%2C-Jingdong",
+            "note": "加拿大工程院（CAE）官网Fellows目录中有其条目，显示其为Baidu计算机视觉首席科学家。"
+          },
+          {
+            "honor": "CAE 外籍院士",
+            "year": null,
+            "source": "https://jingdongwang2017.github.io/",
+            "note": "学者个人主页注明其为“Fellow of CAE”。"
+          },
+          {
+            "honor": "ACM 杰出会员",
+            "year": 2018,
+            "source": "https://awards.acm.org/award-recipients/wang_6419672",
+            "note": "ACM官网个人荣誉页面：ACM Distinguished Member（2018）。"
+          },
+          {
+            "honor": "ACM 杰出会员",
+            "year": 2018,
+            "source": "https://www.acm.org/media-center/2018/november/distinguished-members-2018",
+            "note": "ACM官方新闻稿公布2018年ACM Distinguished Members名单。"
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Jifeng Dai",
+      "cn": "代季峰",
+      "affiliation": "Tsinghua",
+      "direction": "cv",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Alec Radford",
+      "affiliation": "OpenAI",
+      "direction": "vlm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Aditya Ramesh",
+      "affiliation": "OpenAI",
+      "direction": "vlm",
+      "tier": "rising",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Ludwig Schmidt",
+      "affiliation": "Anthropic",
+      "direction": "vlm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Bjorn Ommer",
+      "affiliation": "LMU",
+      "direction": "vlm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Robin Rombach",
+      "affiliation": "Black Forest Labs",
+      "direction": "vlm",
+      "tier": "rising",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "William Peebles",
+      "affiliation": "OpenAI",
+      "direction": "vlm",
+      "tier": "rising",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "NSF GRFP"
+        ],
+        "evidence": [
+          {
+            "honor": "NSF GRFP",
+            "year": null,
+            "source": "https://www.wpeebles.com/",
+            "note": "个人主页注明博士期间获得美国国家科学基金会研究生研究奖学金（NSF GRFP）资助"
+          }
+        ],
+        "confidence": "medium"
+      }
+    },
+    {
+      "name": "Jiasen Lu",
+      "affiliation": "Google",
+      "direction": "vlm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Jianwei Yang",
+      "affiliation": "Microsoft",
+      "direction": "vlm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Chunyuan Li",
+      "affiliation": "ByteDance",
+      "direction": "vlm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Xiangyu Zhang",
+      "cn": "张祥雨",
+      "affiliation": "StepFun",
+      "direction": "vlm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Bolei Zhou",
+      "cn": "周博磊",
+      "affiliation": "UCLA",
+      "direction": "vlm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Jun Zhu",
+      "cn": "朱军",
+      "affiliation": "Tsinghua",
+      "direction": "vlm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "IEEE Fellow",
+          "AAAI Fellow",
+          "优青",
+          "青年拔尖人才"
+        ],
+        "evidence": [
+          {
+            "honor": "AAAI Fellow",
+            "year": 2024,
+            "source": "https://www.cs.tsinghua.edu.cn/info/1088/5823.htm",
+            "note": "清华大学计算机系官网发布：朱军入选2024年AAAI Fellow"
+          },
+          {
+            "honor": "IEEE Fellow",
+            "year": 2023,
+            "source": "https://ml.cs.tsinghua.edu.cn/~jun/professional.shtml",
+            "note": "个人主页职业活动页标注“IEEE Fellow (from 2023)”"
+          },
+          {
+            "honor": "IEEE Fellow",
+            "year": null,
+            "source": "https://ieeexplore.ieee.org/author/38490433400",
+            "note": "IEEE Xplore 作者页显示头衔“Fellow, IEEE”"
+          },
+          {
+            "honor": "优青",
+            "year": 2013,
+            "source": "https://ml.cs.tsinghua.edu.cn/~jun/biography.shtml",
+            "note": "个人主页简历页：NSFC Excellent Young Scholar Award, 2013"
+          },
+          {
+            "honor": "优青",
+            "year": null,
+            "source": "https://www.cs.tsinghua.edu.cn/info/1121/3551.htm",
+            "note": "清华计算机系教师页提到其获得“自然科学基金优青基金”"
+          },
+          {
+            "honor": "青年拔尖人才",
+            "year": null,
+            "source": "https://ml.cs.tsinghua.edu.cn/~jun/biography.shtml",
+            "note": "个人主页简历页说明入选“National Youth top-notch Talents Program”（万人计划青年拔尖人才）"
+          }
+        ],
+        "confidence": "medium"
+      }
+    },
+    {
+      "name": "Jiwen Lu",
+      "cn": "鲁继文",
+      "affiliation": "Tsinghua",
+      "direction": "vlm",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "IEEE Fellow",
+          "IAPR Fellow",
+          "AAIA Fellow",
+          "杰青",
+          "优青",
+          "青年千人"
+        ],
+        "evidence": [
+          {
+            "honor": "IEEE Fellow",
+            "year": 2024,
+            "source": "https://www.au.tsinghua.edu.cn/info/1062/3537.htm",
+            "note": "清华大学自动化系官网新闻宣布其当选2024年度IEEE Fellow。"
+          },
+          {
+            "honor": "IEEE Fellow",
+            "year": 2024,
+            "source": "https://signalprocessingsociety.org/newsletter/2024/01/55-sps-members-elevated-fellow",
+            "note": "IEEE信号处理学会新闻列出Jiwen Lu为2024年获选IEEE Fellow（SPS评审通道）。"
+          },
+          {
+            "honor": "IAPR Fellow",
+            "year": 2020,
+            "source": "https://iapr.org/fellows/alphabetical-list-of-iapr-fellows/",
+            "note": "IAPR官网按字母列出会士，含“Jiwen Lu (China) - 2020”。"
+          },
+          {
+            "honor": "IAPR Fellow",
+            "year": 2020,
+            "source": "https://www.au.tsinghua.edu.cn/info/1154/3342.htm",
+            "note": "清华大学自动化系师资页“奖励与荣誉”列出IAPR Fellow（2020）。"
+          },
+          {
+            "honor": "AAIA Fellow",
+            "year": 2022,
+            "source": "https://www.au.tsinghua.edu.cn/info/1154/3342.htm",
+            "note": "清华大学自动化系师资页“奖励与荣誉”列出AAIA Fellow（2022）。"
+          },
+          {
+            "honor": "AAIA Fellow",
+            "year": 2022,
+            "source": "https://cn.aaia-ai.org/fellows?page=56",
+            "note": "AAIA（现AAIS）官网Fellows页面包含“Jiwen Lu”条目。"
+          },
+          {
+            "honor": "杰青",
+            "year": 2021,
+            "source": "https://www.au.tsinghua.edu.cn/info/1154/3342.htm",
+            "note": "师资页“奖励与荣誉”标注其获国家杰出青年科学基金（2021）。"
+          },
+          {
+            "honor": "杰青",
+            "year": 2021,
+            "source": "https://qzc.tsinghua.edu.cn/info/1074/6388.htm",
+            "note": "清华大学求真书院官网讲座简介注明其为国家杰出青年科学基金获得者。"
+          },
+          {
+            "honor": "优青",
+            "year": 2018,
+            "source": "https://www.au.tsinghua.edu.cn/info/1154/3342.htm",
+            "note": "师资页“奖励与荣誉”列出国家优秀青年科学基金（2018）。"
+          },
+          {
+            "honor": "青年千人",
+            "year": 2015,
+            "source": "https://www.au.tsinghua.edu.cn/info/1154/3342.htm",
+            "note": "师资页“奖励与荣誉”列出国家海外高层次人才计划青年项目（通常称‘青年千人’，2015）。"
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Zhuang Liu",
+      "cn": "刘壮",
+      "affiliation": "Princeton",
+      "direction": "vlm",
+      "tier": "rising",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Jeff Dean",
+      "affiliation": "Google",
+      "direction": "systems",
+      "tier": "senior",
+      "honors": [
+        "NAE",
+        "ACM Fellow"
+      ]
+    },
+    {
+      "name": "Tianqi Chen",
+      "cn": "陈天奇",
+      "affiliation": "CMU",
+      "direction": "systems",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Matei Zaharia",
+      "affiliation": "Databricks / Stanford",
+      "direction": "systems",
+      "tier": "senior",
+      "honors": [
+        "ACM Fellow"
+      ]
+    },
+    {
+      "name": "Ion Stoica",
+      "affiliation": "Berkeley",
+      "direction": "systems",
+      "tier": "senior",
+      "honors": [
+        "ACM Fellow"
+      ]
+    },
+    {
+      "name": "Hao Zhang",
+      "affiliation": "UCSD",
+      "direction": "systems",
+      "tier": "rising",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "Sloan Research Fellow",
+          "Google ML and Systems Junior Faculty Award"
+        ],
+        "evidence": [
+          {
+            "honor": "Sloan Research Fellow",
+            "year": 2026,
+            "source": "https://sloan.org/fellowships/2026-Fellows",
+            "note": "Sloan基金会2026年获奖名单直接列出“Hao Zhang, University of California, San Diego”（计算机科学）"
+          },
+          {
+            "honor": "Sloan Research Fellow",
+            "year": 2026,
+            "source": "https://today.ucsd.edu/story/2026-sloan-research-fellowships",
+            "note": "UCSD官网新闻宣布Hao Zhang当选2026年Sloan Research Fellow"
+          },
+          {
+            "honor": "Google ML and Systems Junior Faculty Award",
+            "year": 2025,
+            "source": "https://datascience.ucsd.edu/hdsi-assistant-professor-hao-zhang-receives-google-junior-faculty-award/",
+            "note": "UCSD HDSI官网新闻宣布其获2025年Google ML and Systems Junior Faculty Award"
+          },
+          {
+            "honor": "Google ML and Systems Junior Faculty Award",
+            "year": 2025,
+            "source": "https://haozhang.ai/",
+            "note": "学者个人主页列明“Google ML and Systems Award (2025)”"
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Zhuohan Li",
+      "affiliation": "Berkeley",
+      "direction": "systems",
+      "tier": "rising",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Sanjeev Arora",
+      "affiliation": "Princeton",
+      "direction": "theory",
+      "tier": "senior",
+      "honors": [
+        "ACM Fellow"
+      ]
+    },
+    {
+      "name": "Tengyu Ma",
+      "affiliation": "Stanford",
+      "direction": "theory",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Jason D. Lee",
+      "affiliation": "Princeton",
+      "direction": "theory",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Peter Bartlett",
+      "affiliation": "Berkeley",
+      "direction": "theory",
+      "tier": "senior",
+      "honors": [
+        "ACM Fellow"
+      ]
+    },
+    {
+      "name": "Pieter Abbeel",
+      "affiliation": "Berkeley",
+      "direction": "rl",
+      "tier": "senior",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "IEEE Fellow"
+        ],
+        "evidence": [
+          {
+            "honor": "IEEE Fellow",
+            "year": 2018,
+            "source": "https://eecs.berkeley.edu/news/pieter-abbeel-and-sanjit-seshia-elected-2018-ieee-fellows/",
+            "note": "EECS Berkeley新闻稿宣布Abbeel当选IEEE Fellow（2018届）。"
+          },
+          {
+            "honor": "IEEE Fellow",
+            "year": null,
+            "source": "https://ieeexplore.ieee.org/author/37542877900",
+            "note": "IEEE Xplore作者页面标注“Pieter Abbeel (Fellow, IEEE)”。"
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Sergey Levine",
+      "affiliation": "Berkeley",
+      "direction": "rl",
+      "tier": "senior",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [
+          "PECASE",
+          "Sloan Fellow",
+          "NSF CAREER",
+          "ONR YIP"
+        ],
+        "evidence": [
+          {
+            "honor": "PECASE",
+            "year": 2025,
+            "source": "https://www.nsf.gov/honorary-awards/pecase/recipients/sergey-levine",
+            "note": "NSF官方PECASE获奖者页面列出Sergey Levine（UC Berkeley），年份为2025。"
+          },
+          {
+            "honor": "PECASE",
+            "year": 2025,
+            "source": "https://engineering.berkeley.edu/news/2025/01/white-house-honors-engineering-faculty-with-early-career-awards-2/",
+            "note": "加州大学伯克利工程学院新闻报道，宣布Sergey Levine获得PECASE。"
+          },
+          {
+            "honor": "Sloan Fellow",
+            "year": 2019,
+            "source": "https://engineering.berkeley.edu/news/2019/02/eecs-professors-win-sloan-fellowship/",
+            "note": "伯克利工程官方新闻：Sergey Levine当选2019年Sloan Research Fellow。"
+          },
+          {
+            "honor": "Sloan Fellow",
+            "year": 2019,
+            "source": "https://vcresearch.berkeley.edu/news/seven-early-career-faculty-win-sloan-research-fellowships",
+            "note": "UC Berkeley Research官方新闻列出2019年校园Sloan Fellows，其中包含Sergey Levine。"
+          },
+          {
+            "honor": "NSF CAREER",
+            "year": 2017,
+            "source": "https://www.nsf.gov/awardsearch/showAward?AWD_ID=1651843",
+            "note": "NSF奖项检索：Award #1651843（CAREER: Deep Robotic Learning ...），PI为Sergey Levine。"
+          },
+          {
+            "honor": "NSF CAREER",
+            "year": 2017,
+            "source": "https://www2.eecs.berkeley.edu/Faculty/Homepages/svlevine.html",
+            "note": "伯克利EECS官方主页“Selected Honors and Awards”中列出NSF CAREER（2017）。"
+          },
+          {
+            "honor": "ONR YIP",
+            "year": 2016,
+            "source": "https://www.onr.navy.mil/education-outreach/sponsored-research/yip/2016-young-investigator-yip",
+            "note": "美国海军研究办公室（ONR）2016年YIP官方名单包含“Dr. Sergey Levine”。"
+          },
+          {
+            "honor": "ONR YIP",
+            "year": 2016,
+            "source": "https://www.navy.mil/Press-Office/News-Stories/display-news/Article/2260163/brilliant-at-any-age-onr-researchers-robots-and-mit/",
+            "note": "美国海军官网新闻指出Sergey Levine为2016年ONR YIP获奖者。"
+          }
+        ],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Chelsea Finn",
+      "affiliation": "Stanford",
+      "direction": "rl",
+      "tier": "mid",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    },
+    {
+      "name": "Yi Wu",
+      "cn": "吴翼",
+      "affiliation": "Tsinghua",
+      "direction": "rl",
+      "tier": "rising",
+      "honors": [],
+      "honors_proposed": {
+        "honors": [],
+        "evidence": [],
+        "confidence": "high"
+      }
+    }
+  ]
+}

@@ -16,7 +16,7 @@ from app.schemas import (
 )
 from pydantic import BaseModel as BaseModel
 from app.services import scholar_service, github_service, hf_service, milestone_service
-from app.services import dblp_service, snapshot_service, ccf_recompute_service
+from app.services import dblp_service, snapshot_service, ccf_recompute_service, persona_service
 from app.services.discover_service import discover_from_github, discover_from_scholar
 from app.utils.paper_dedup import deduplicate_papers
 from app.deps import resolve_user
@@ -43,6 +43,7 @@ async def _full_refresh(user_id: int):
         await hf_service.fetch_hf_items_for_user(db, user)
         await milestone_service.check_milestones(db, user)
         await snapshot_service.record_daily_snapshot(db, user)
+        await persona_service.compute_persona(db, user)
         await db.commit()
 
 

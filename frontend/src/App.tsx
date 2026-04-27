@@ -4,6 +4,10 @@ import SetupPage from "./pages/SetupPage";
 import ProfilePage from "./pages/ProfilePage";
 import MilestonePage from "./pages/MilestonePage";
 import UsersPage from "./pages/UsersPage";
+import LeaderboardPage from "./pages/LeaderboardPage";
+import RecruitPage from "./pages/RecruitPage";
+import AdvisorPage from "./pages/AdvisorPage";
+import DocsPage from "./pages/DocsPage";
 
 function Logo({ size = 28 }: { size?: number }) {
   return (
@@ -34,6 +38,29 @@ function Logo({ size = 28 }: { size?: number }) {
   );
 }
 
+function NavLink({ to, current, label }: { to: string; current: string; label: string }) {
+  const active = current === to || current.startsWith(to + "/");
+  return (
+    <Link
+      to={to}
+      className={`relative rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+        active
+          ? "bg-indigo-50 text-indigo-700"
+          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+      }`}
+    >
+      {label}
+      {active && (
+        <motion.span
+          layoutId="nav-pill"
+          className="absolute inset-0 rounded-lg border border-indigo-200"
+          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+        />
+      )}
+    </Link>
+  );
+}
+
 function TopBar() {
   const location = useLocation();
   const isHome = location.pathname === "/";
@@ -52,15 +79,14 @@ function TopBar() {
             Impact<span className="text-indigo-600">Hub</span>
           </span>
         </Link>
-        <div className="flex items-center gap-4">
-          <Link
-            to="/users"
-            className="text-sm text-gray-500 transition hover:text-indigo-600"
-          >
-            用户列表
-          </Link>
+        <div className="flex items-center gap-1">
+          <NavLink to="/leaderboard" current={location.pathname} label="排行榜" />
+          <NavLink to="/recruit" current={location.pathname} label="人才查询" />
+          <NavLink to="/advisor" current={location.pathname} label="保研导师" />
+          <NavLink to="/users" current={location.pathname} label="用户列表" />
+          <NavLink to="/docs" current={location.pathname} label="文档" />
           {isHome && (
-            <span className="text-xs text-gray-400">
+            <span className="ml-2 text-xs text-gray-400 border-l border-gray-200 pl-3">
               科研影响力看板
             </span>
           )}
@@ -77,6 +103,11 @@ export default function App() {
       <Routes>
         <Route path="/" element={<SetupPage />} />
         <Route path="/users" element={<UsersPage />} />
+        <Route path="/leaderboard" element={<LeaderboardPage />} />
+        <Route path="/recruit" element={<RecruitPage />} />
+        <Route path="/advisor" element={<AdvisorPage />} />
+        <Route path="/advisor/schools/:schoolId" element={<AdvisorPage />} />
+        <Route path="/docs" element={<DocsPage />} />
         <Route path="/profile/:id" element={<ProfilePage />} />
         <Route path="/milestones/:id" element={<MilestonePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

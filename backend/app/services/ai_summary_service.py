@@ -8,8 +8,8 @@ import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
-from app.models import User, Paper, GithubRepo, HFItem, AISummary, BuzzSnapshot, NotableCitation
-from app.config import LLM_API_BASE, LLM_API_KEY, LLM_BUZZ_MODEL
+from app.models import User, Paper, GithubRepo, HFItem, AISummary, BuzzSnapshot, NotableCitation, ResearchTrajectory
+from app.config import LLM_API_BASE, LLM_API_KEY, LLM_BUZZ_MODEL, LLM_FALLBACK_MODEL
 from app.utils.paper_dedup import deduplicate_papers
 
 logger = logging.getLogger(__name__)
@@ -56,18 +56,47 @@ async def _collect_user_context(db: AsyncSession, user: User) -> str:
         select(func.count()).select_from(NotableCitation).where(NotableCitation.user_id == uid)
     )).scalar() or 0
 
-    # Buzz snapshot
+    # Buzz snapshot (mid-layer, summarized external chatter)
     buzz = (await db.execute(
         select(BuzzSnapshot).where(BuzzSnapshot.user_id == uid)
     )).scalars().first()
 
-    # Build context text
+    # Trajectory tree (mid-layer analysis produced before this step)
+    traj = (await db.execute(
+        select(ResearchTrajectory).where(ResearchTrajectory.user_id == uid)
+    )).scalars().first()
+
+    # ── Build context text ──
+    # Pipeline intent (for the prompt):
+    #   buzz (collected) → trajectory (analyzed) → ai_summary (persona)
+    # So we lean heavily on the trajectory root.summary + branch labels,
+    # and use raw metrics / buzz only as supplementary signals.
     lines = []
     lines.append(f"研究者：{user.name or user.github_username}")
     if user.bio:
         lines.append(f"简介：{user.bio}")
+    if user.honor_tags and isinstance(user.honor_tags, list) and user.honor_tags:
+        lines.append(f"已知荣誉：{', '.join(user.honor_tags)}")
     lines.append("")
 
+    # ── Primary input: Trajectory (上一层的汇总分析) ──
+    if traj and isinstance(traj.trajectory_json, dict):
+        root = traj.trajectory_json.get("root") or {}
+        root_summary = (root.get("summary") or "").strip()
+        if root_summary:
+            lines.append(f"【研究演化树总结】{root_summary}")
+            # Include branch labels + summaries for more texture
+            branches = root.get("children") or []
+            if branches:
+                lines.append("主要研究脉络：")
+                for b in branches[:6]:
+                    label = (b.get("label") or "").strip()
+                    yr = (b.get("year_range") or "").strip()
+                    brief = (b.get("summary") or "").strip().split("。")[0]
+                    lines.append(f"  - {label}（{yr}）：{brief}")
+            lines.append("")
+
+    # ── Secondary input: Raw metrics (supporting numbers) ──
     lines.append(f"学术指标：共 {len(papers)} 篇论文，总引用 {total_citations}，h-index {h_index}")
     if ccf_a or ccf_b:
         lines.append(f"CCF-A 论文 {ccf_a} 篇，CCF-B 论文 {ccf_b} 篇")
@@ -75,9 +104,10 @@ async def _collect_user_context(db: AsyncSession, user: User) -> str:
         lines.append(f"被 {notable_count} 位知名/顶级学者引用")
     lines.append("")
 
-    if papers[:10]:
+    # Top papers (still useful as concrete anchors for tags)
+    if papers[:8]:
         lines.append("代表论文（按引用排序）：")
-        for p in papers[:10]:
+        for p in papers[:8]:
             ccf_tag = f" [CCF-{p.ccf_rank}]" if p.ccf_rank else ""
             lines.append(f"  - {p.title} ({p.venue}, {p.year}) 引用:{p.citation_count}{ccf_tag}")
         lines.append("")
@@ -94,6 +124,7 @@ async def _collect_user_context(db: AsyncSession, user: User) -> str:
             lines.append(f"  - {h.name} ({h.item_type}): {h.downloads} downloads, {h.likes} likes")
         lines.append("")
 
+    # ── Supplementary input: Buzz (already summarized in trajectory, but topics still useful) ──
     if buzz and buzz.heat_label:
         lines.append(f"网络讨论热度：{buzz.heat_label}")
         if buzz.topics:
@@ -151,14 +182,14 @@ async def refresh_ai_summary(db: AsyncSession, user: User) -> AISummary | None:
         except Exception as e:
             logger.info("AI Summary: Responses API failed (%s), trying chat completions", e)
 
-        # Fallback: Chat Completions API
+        # Fallback: Chat Completions API with lightweight model
         if not content:
             try:
                 resp = await client.post(
                     f"{LLM_API_BASE}/chat/completions",
                     headers={"Authorization": f"Bearer {LLM_API_KEY}"},
                     json={
-                        "model": LLM_BUZZ_MODEL,
+                        "model": LLM_FALLBACK_MODEL,
                         "messages": [{"role": "user", "content": prompt}],
                         "max_completion_tokens": 2000,
                     },

@@ -12,13 +12,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, Response
 
 from app.database import init_db
-from app.routers import profile, data, milestones, citations, growth, reports, buzz, ai_summary, stats
+from app.routers import profile, data, milestones, citations, growth, reports, buzz, ai_summary, stats, trajectory, persona, rankings, career, annual_poem, capability, recruit, advisor
 from app.tasks.scheduler import start_scheduler
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+BACKEND_STATIC = Path(__file__).resolve().parent.parent / "static"
 
 
 @asynccontextmanager
@@ -47,8 +48,36 @@ app.include_router(reports.router, prefix="/api", tags=["reports"])
 app.include_router(buzz.router, prefix="/api", tags=["buzz"])
 app.include_router(ai_summary.router, prefix="/api", tags=["ai_summary"])
 app.include_router(stats.router, prefix="/api", tags=["stats"])
+app.include_router(trajectory.router, prefix="/api", tags=["trajectory"])
+app.include_router(persona.router, prefix="/api", tags=["persona"])
+app.include_router(rankings.router, prefix="/api", tags=["rankings"])
+app.include_router(career.router, prefix="/api", tags=["career"])
+app.include_router(annual_poem.router, prefix="/api", tags=["annual_poem"])
+app.include_router(capability.router, prefix="/api", tags=["capability"])
+app.include_router(recruit.router, prefix="/api", tags=["recruit"])
+app.include_router(advisor.router, prefix="/api", tags=["advisor"])
 
 ALLOWED_IMAGE_HOSTS = {"avatars.githubusercontent.com", "github.com", "huggingface.co"}
+
+DOCS_DIR = Path(__file__).resolve().parent.parent.parent / "docs"
+
+# Whitelist of doc files the page can request
+DOC_FILES = {
+    "system": "system_overview.md",
+}
+
+
+@app.get("/api/docs/{slug}")
+async def get_doc(slug: str):
+    """Serve a markdown doc from docs/ dir."""
+    filename = DOC_FILES.get(slug)
+    if not filename:
+        return Response(status_code=404, content="Unknown doc slug")
+    path = DOCS_DIR / filename
+    if not path.exists():
+        return Response(status_code=404, content="Doc not found on server")
+    content = path.read_text(encoding="utf-8")
+    return {"slug": slug, "filename": filename, "content": content}
 
 
 @app.get("/api/proxy/image")
@@ -68,6 +97,9 @@ async def proxy_image(url: str = Query(...)):
             headers={"Cache-Control": "public, max-age=86400"},
         )
 
+
+if BACKEND_STATIC.exists():
+    app.mount("/static", StaticFiles(directory=BACKEND_STATIC), name="backend_static")
 
 if FRONTEND_DIST.exists():
     app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="static")

@@ -23,7 +23,10 @@ OUTBOUND_PROXY: str | None = _os.environ.get("OUTBOUND_PROXY")
 # LLM / Search API
 LLM_API_BASE: str = _os.environ.get("LLM_API_BASE", "")
 LLM_API_KEY: str = _os.environ.get("LLM_API_KEY", "")
+# Primary reasoning model (used for Responses API + web search, heavy analysis)
 LLM_BUZZ_MODEL: str = _os.environ.get("LLM_BUZZ_MODEL", "gpt-5")
+# Lightweight fallback when the primary path fails or for small JSON tasks
+LLM_FALLBACK_MODEL: str = _os.environ.get("LLM_FALLBACK_MODEL", "gpt-5-mini")
 
 REFRESH_INTERVAL_HOURS = 6
 

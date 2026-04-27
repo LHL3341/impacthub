@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import type { UserProfile, Stats, AISummary } from "@/lib/api";
+import type { UserProfile, Stats, AISummary, ResearcherPersona } from "@/lib/api";
+import PersonaBadge from "./PersonaBadge";
 import { formatNumber } from "@/lib/utils";
 import { BookOpen, Star, Download, Award, Link2, Sparkles, Loader2, RefreshCw } from "lucide-react";
 
@@ -11,6 +12,9 @@ interface Props {
   aiSummaryLoading?: boolean;
   onGenerateAISummary?: () => void;
   onLinkAccounts?: () => void;
+  persona?: ResearcherPersona | null;
+  personaLoading?: boolean;
+  onGeneratePersona?: () => void;
 }
 
 /** Hook: animate a number from 0 to target over `duration` ms */
@@ -46,7 +50,7 @@ const platforms = [
   { field: "homepage" as const, name: "个人主页", url: (v: string) => v.startsWith("http") ? v : `https://${v}` },
 ];
 
-export default function HeroSection({ user, stats, aiSummary, aiSummaryLoading, onGenerateAISummary, onLinkAccounts }: Props) {
+export default function HeroSection({ user, stats, aiSummary, aiSummaryLoading, onGenerateAISummary, onLinkAccounts, persona, personaLoading, onGeneratePersona }: Props) {
   const citationCount = useCountUp(stats.total_citations);
   const starCount = useCountUp(stats.total_stars);
   const downloadCount = useCountUp(stats.total_downloads);
