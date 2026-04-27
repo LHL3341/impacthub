@@ -6,7 +6,7 @@
 
 <p align="center">
   <b>Unified Research Impact Dashboard</b><br/>
-  Aggregate your academic papers, GitHub repos, and Hugging Face models into one portfolio.
+  Personal research portfolio + 147-school graduate advisor directory + AI-native talent search.
 </p>
 
 <p align="center">
@@ -21,6 +21,17 @@
 </p>
 
 ---
+
+## Pages
+
+| Route | Purpose |
+|-------|---------|
+| `/profile/:id` | Per-researcher dashboard (papers / repos / HF / persona / capability / poem / share cards) |
+| `/leaderboard` | Total + young scholar + 6 direction leaderboards (top 10000 exact rank, then percentile) |
+| `/recruit` | **B2B AI talent search** — recruiter pastes JD → LLM extracts criteria → DB filter → LLM rerank with reasoning |
+| `/advisor` | **Graduate advisor directory** — 147 双一流 (985/211) universities, LLM-driven crawler for colleges + faculty stubs |
+| `/users` | All ImpactHub profiles |
+| `/docs` | System overview |
 
 ## Features
 
@@ -50,6 +61,39 @@ One profile that unifies your presence across **Semantic Scholar**, **GitHub**, 
 
 - LLM-generated researcher bio capturing your research identity
 - Auto-generated research tags from your publication topics
+
+### Researcher Persona (12 MBTI-style types)
+
+- LLM picks one of 12 meme personas (GOAT / PI / WOLF / JUAN / KPI / MONK / NINJA / PROOF / SENSEI / VIRAL / BDFL / HYPE) with AI-generated illustrations
+- 4-axis dimensions (output / ecosystem / seniority / collaboration) with continuous scores
+
+### Multi-Direction Capability Profile
+
+- LLM identifies 1-4 research directions a scholar actually works in
+- Per-direction role (originator / early_adopter / extender / follower) + weight + achievements + representative works
+- Avoids the single-tag oversimplification
+
+### Research Evolution Tree, Annual Poem, Career Timeline
+
+- Tree-shaped research trajectory: time on Y axis, research branches on X
+- Xiaohongshu-style annual research poem (10-14 verses, data-driven)
+- LLM + web-search career timeline (education + positions, with sources)
+
+### Leaderboards
+
+- Total / Young Scholar (first paper <10y) / 6 directions (LLM, CV, VLM, Systems, Theory, RL)
+- Top 10000 shows exact rank; beyond that shows percentile only
+
+### B2B Recruit (AI Talent Search)
+
+- Free-text JD → LLM extracts structured criteria (direction, seniority, h-index threshold, must/nice keywords, honors)
+- DB coarse filter → top 40 candidate dossiers → LLM rerank with `match_score`, `tier`, fit reasoning, concerns, key works
+
+### Graduate Advisor Directory (`/advisor`)
+
+- Seed: 147 双一流 universities (incl. all 985/211), authoritative source: 教育部 2022 第二轮双一流 list
+- LLM-driven generic crawler — no per-school adapters; uses heuristic college/teacher extraction with JS-redirect follow + permissive SSL for old .edu.cn
+- Three-layer pipeline: school directory → college list → advisor stubs (name + title + homepage)
 
 ### Grant Application Tools
 
