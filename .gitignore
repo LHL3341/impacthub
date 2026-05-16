@@ -8,6 +8,8 @@
 # but never track the SQLite WAL/SHM sidecar files (they change every second).
 *.db-shm
 *.db-wal
+*.db.bak
+backend/data/recommendation_uploads/
 
 # Python
 __pycache__/

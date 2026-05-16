@@ -349,6 +349,11 @@ class Advisor(Base):
     grad_quota_phd: Mapped[int] = mapped_column(Integer, default=0)      # 博士名额
     accepts_recommended: Mapped[bool | None] = mapped_column(Boolean, nullable=True)  # 是否招保研
 
+    # XHS Recruitment Summary (小红书招生摘要)
+    recruitment_summary_json: Mapped[dict | None] = mapped_column(JSON, nullable=True, default=None)
+    recruitment_summary_refreshed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    recruitment_summary_status: Mapped[str] = mapped_column(String(20), default="")  # found_current/found_stale/not_found
+
     # External linkage (filled by Layer B)
     semantic_scholar_id: Mapped[str] = mapped_column(String(100), default="")
     h_index: Mapped[int] = mapped_column(Integer, default=0)
@@ -366,6 +371,43 @@ class Advisor(Base):
 
     school: Mapped["AdvisorSchool"] = relationship(back_populates="advisors")
     college: Mapped["AdvisorCollege"] = relationship(back_populates="advisors")
+
+
+class AdvisorEmbeddingMetadata(Base):
+    """Metadata for advisor vectors stored in sqlite-vec."""
+    __tablename__ = "advisor_embedding_metadata"
+
+    advisor_id: Mapped[int] = mapped_column(ForeignKey("advisors.id"), primary_key=True)
+    embedding_type: Mapped[str] = mapped_column(String(20), default="research_profile")
+    source_hash: Mapped[str] = mapped_column(String(64), default="")
+    source_text: Mapped[str] = mapped_column(Text, default="")
+    model: Mapped[str] = mapped_column(String(100), default="")
+    dimensions: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    advisor: Mapped["Advisor"] = relationship()
+
+
+class RecommendationSession(Base):
+    """One resume recommendation job and its persisted result."""
+    __tablename__ = "recommendation_sessions"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    status: Mapped[str] = mapped_column(String(20), default="queued")
+    progress: Mapped[int] = mapped_column(Integer, default=0)
+    message: Mapped[str] = mapped_column(String(300), default="")
+    error: Mapped[str] = mapped_column(Text, default="")
+    resume_filename: Mapped[str] = mapped_column(String(300), default="")
+    requirements: Mapped[str] = mapped_column(Text, default="")
+    top_n: Mapped[int] = mapped_column(Integer, default=3)
+    school_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    college_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    resume_text: Mapped[str] = mapped_column(Text, default="")
+    resume_summary_json: Mapped[dict | None] = mapped_column(JSON, nullable=True, default=None)
+    result_json: Mapped[dict | None] = mapped_column(JSON, nullable=True, default=None)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class AdvisorMention(Base):
