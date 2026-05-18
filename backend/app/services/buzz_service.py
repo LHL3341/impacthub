@@ -21,7 +21,7 @@ from app.config import OUTBOUND_PROXY, LLM_API_BASE, LLM_API_KEY, LLM_BUZZ_MODEL
 
 logger = logging.getLogger(__name__)
 
-BUZZ_MODEL = LLM_BUZZ_MODEL
+BUZZ_MODEL = "gpt-5-mini"  # mini supports web_search_preview and is ~3× faster than gpt-5 for this
 
 def _classify_heat(content: str) -> str:
     """Derive heat label from the structured tag in section 7."""

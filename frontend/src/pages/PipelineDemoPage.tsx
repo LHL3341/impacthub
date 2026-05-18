@@ -7,18 +7,15 @@ import {
 import { api, type PipelineDemoAdvisorHit } from "@/lib/api";
 
 const STAGE_PLAN: Array<{ step: number; label: string; description: string }> = [
-  { step: 1, label: "resolve_advisor", description: "读取导师在 DB 里的当前状态" },
-  { step: 2, label: "ss_lookup",       description: "搜 Semantic Scholar 作者 ID (拼音变体 + 姓名形状过滤 + /author/{id} 存活验证)" },
-  { step: 3, label: "discover",        description: "拉 SS 作者主页 + 姓名一致性 assert + 自动发现 GitHub / HuggingFace" },
-  { step: 4, label: "create_user",     description: "新建 User 记录 (advisor.impacthub_user_id 留到最后一步全跑完才写)" },
-  { step: 5, label: "portfolio",       description: "拉论文 (SS+DBLP) · CCF 评级 · GitHub · HuggingFace · 快照 · 学术人格" },
-  { step: 6, label: "persona",         description: "学术人格 (12 类 MBTI 风格)" },
-  { step: 7, label: "career",          description: "教育 + 职位时间线 (LLM + 网络搜索)" },
-  { step: 8, label: "capability",      description: "多方向能力角色 (开创者/拓展者/跟随者)" },
-  { step: 9, label: "buzz",            description: "网络讨论热度 (Perplexity 搜索)" },
-  { step: 10, label: "trajectory",     description: "研究轨迹分析 (依赖 buzz)" },
-  { step: 11, label: "ai_summary",     description: "整体 AI 摘要 + 标签 (依赖 buzz + trajectory)" },
-  { step: 12, label: "finalize",       description: "全部跑完，把 advisor.impacthub_user_id 写回，正式标记为 linked" },
+  { step: 1, label: "resolve_advisor",    description: "读取导师在 DB 里的当前状态" },
+  { step: 2, label: "external_ids",       description: "gpt-5-mini + web_search 跨平台找 SS / Google Scholar / GitHub / HuggingFace；SS 自带存活 + 姓名一致性 assert" },
+  { step: 3, label: "create_user",        description: "新建 User 记录 (advisor.impacthub_user_id 留到最后一步全跑完才写)" },
+  { step: 4, label: "portfolio",          description: "拉论文 (SS+DBLP) · CCF 评级 · GitHub · HuggingFace · 快照" },
+  { step: 5, label: "career",             description: "教育 + 职位时间线 (LLM + 网络搜索)" },
+  { step: 6, label: "buzz",               description: "网络讨论热度 (Perplexity 搜索)" },
+  { step: 7, label: "research_analysis",  description: "能力角色 + 研究轨迹 (一次 LLM 调用同时产出 capability + trajectory)" },
+  { step: 8, label: "portrait",           description: "学术人格 + 整体 AI 摘要 (一次 LLM 调用同时产出 persona + ai_summary)" },
+  { step: 9, label: "finalize",           description: "全部跑完，把 advisor.impacthub_user_id 写回，正式标记为 linked" },
 ];
 
 type StageStatus = "idle" | "running" | "done" | "error";
@@ -402,10 +399,10 @@ function ErrorDetail({ data }: { data: any }) {
         <div className="mb-1">
           <span className="text-rose-700 font-medium">目标姓: </span>
           <span className="font-mono text-rose-800">{data.target_surname}</span>
-          {data.target_given_variants?.length > 0 && (
+          {data.target_token_sets?.length > 0 && (
             <>
-              <span className="text-rose-700 font-medium ml-3">名拼音变体: </span>
-              <span className="font-mono text-rose-800">{data.target_given_variants.join(" / ")}</span>
+              <span className="text-rose-700 font-medium ml-3">接受的 token 集合: </span>
+              <span className="font-mono text-rose-800">{data.target_token_sets.map((s: string[]) => `{${s.join(",")}}`).join(" / ")}</span>
             </>
           )}
         </div>
@@ -453,6 +450,28 @@ function ErrorDetail({ data }: { data: any }) {
 }
 
 function StepData({ label, data }: { label: string; data: any }) {
+  // Combined-stage steps (research_analysis / portrait) carry results from multiple
+  // sub-services in data.sub_steps. Render each as its own labelled block.
+  if (Array.isArray(data?.sub_steps) && data.sub_steps.length > 1) {
+    return (
+      <div className="mt-2 space-y-2">
+        {data.sub_steps.map((s: any, i: number) => (
+          <div key={i} className="rounded border border-gray-200 bg-white/70 px-2 py-1.5">
+            <div className="flex items-center gap-2 text-[11px]">
+              <span className={`font-semibold ${s.ok ? "text-emerald-700" : "text-rose-700"}`}>
+                {s.ok ? "✓" : "✗"} {s.label}
+              </span>
+              <span className="text-gray-400">· {s.duration?.toFixed(1)}s</span>
+              {s.data?.quality_warning && <span className="text-amber-700 text-[10px]">⚠ {s.data.quality_warning}</span>}
+            </div>
+            {s.error && <div className="text-[11px] text-rose-700 mt-0.5">{s.error}</div>}
+            {s.data && <StepData label={s.label} data={s.data} />}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   const entries = useMemo(() => {
     if (label === "resolve_advisor") {
       return [
@@ -464,28 +483,19 @@ function StepData({ label, data }: { label: string; data: any }) {
         ["已存在 User?", data.already_linked ? `Yes (User ${data.existing_user_id})` : "no"],
       ];
     }
-    if (label === "ss_lookup") {
+    if (label === "external_ids") {
       return [
         ["scholar_id", data.scholar_id],
-        ["source", data.source],
+        ["来源", data.source],
         data.name && ["SS name", data.name],
-        data.h_index != null && ["h-index / cites", `${data.h_index} / ${data.citation_count}`],
-        data.affiliations?.length && ["affiliations", data.affiliations.join(" · ")],
+        data.h_index != null && ["h-index / 引用", `${data.h_index} / ${data.citation_count}`],
+        data.affiliations?.length && ["SS 机构", data.affiliations.join(" · ")],
+        data.google_scholar_id && ["Google Scholar", <a key="gs" href={`https://scholar.google.com/citations?user=${data.google_scholar_id}`} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">{data.google_scholar_id}</a>],
+        data.github_username && ["GitHub", <a key="gh" href={`https://github.com/${data.github_username}`} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">{data.github_username}</a>],
+        data.hf_username && ["HuggingFace", <a key="hf" href={`https://huggingface.co/${data.hf_username}`} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">{data.hf_username}</a>],
+        data.llm_evidence && ["LLM 验证依据", <span key="ev" className="italic text-gray-600">{data.llm_evidence}</span>],
+        data.n_web_searches != null && ["web 搜索次数", data.n_web_searches],
       ].filter(Boolean) as [string, any][];
-    }
-    if (label === "discover") {
-      const ghCandidate = data.github_auto_candidate;
-      const ghKept = data.github_kept;
-      return [
-        ["SS name", data.name || "—"],
-        ["github", ghCandidate
-          ? (ghKept
-              ? <span className="text-emerald-700">{data.github_username} <span className="text-[10px] text-gray-500">(候选 {ghCandidate}，学校校验通过)</span></span>
-              : <span className="text-rose-700">— <span className="text-[10px] text-gray-500">(候选 {ghCandidate}，未通过学校校验，已丢弃)</span></span>
-            )
-          : (data.github_username || "—")],
-        ["hf", data.hf_username || "—"],
-      ];
     }
     if (label === "create_user") {
       return [
