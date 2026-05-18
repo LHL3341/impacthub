@@ -49,6 +49,11 @@ class Base(DeclarativeBase):
 
 
 async def init_db():
+    # Ensure all ORM models are registered on Base.metadata before create_all().
+    # Routers happen to import models during normal app startup, but init_db()
+    # should also work correctly when called directly by scripts or maintenance jobs.
+    import app.models  # noqa: F401
+
     async with engine.begin() as conn:
         await conn.execute(text("SELECT vec_version()"))
         await conn.run_sync(Base.metadata.create_all)
