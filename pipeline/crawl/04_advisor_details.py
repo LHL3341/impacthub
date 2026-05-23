@@ -3,7 +3,7 @@
 Selects advisors where:
   - tier filter (school.is_985 etc.)
   - college.name matches a CSAI keyword
-  - bio/research_areas empty
+  - bio is empty, or previous crawl status is not detailed
   - homepage_url not empty
 
 Processes in school-grouped order so per-host politeness delays kick in.
@@ -13,6 +13,7 @@ Usage:
     cd pipeline
     python crawl/04_advisor_details.py --tier 985 --max 200
     python crawl/04_advisor_details.py --school 复旦 --max 100
+    python crawl/04_advisor_details.py --school 浙江大学 --college 计算机科学与技术学院 --max 5
 """
 
 import argparse
@@ -24,7 +25,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from pipeline._common import CSAI_KEYWORDS, setup_logging  # noqa: E402  (also adds backend/ to sys.path)
 
-from sqlalchemy import select, and_, or_, func
+from sqlalchemy import select, and_, or_
 from sqlalchemy.orm import joinedload
 
 from app.database import async_session
@@ -36,7 +37,12 @@ DELAY_BETWEEN = 3.0
 DELAY_AFTER_ERROR = 30.0
 
 
-async def fetch_targets(tier: str, max_n: int, school_filter: str | None = None) -> list[Advisor]:
+async def fetch_targets(
+    tier: str,
+    max_n: int,
+    school_filter: str | None = None,
+    college_filter: str | None = None,
+) -> list[Advisor]:
     """Return ordered list of advisor stubs to process."""
     async with async_session() as db:
         # Build WHERE on tier
@@ -51,10 +57,16 @@ async def fetch_targets(tier: str, max_n: int, school_filter: str | None = None)
 
         kw_or = or_(*[AdvisorCollege.name.like(f"%{k}%") for k in CSAI_KEYWORDS])
 
-        # stub: no bio AND no research_areas; has homepage_url
+        # incomplete detail: missing bio or not yet marked detailed; has homepage_url.
+        # Some old faculty pages do not publish research areas, so an empty
+        # research_areas array alone must not make a finished row loop forever.
         stub_where = and_(
-            or_(Advisor.bio.is_(None), Advisor.bio == ""),
-            or_(Advisor.research_areas.is_(None), func.json_array_length(Advisor.research_areas) == 0),
+            or_(Advisor.crawl_status.is_(None), Advisor.crawl_status != "failed"),
+            or_(
+                Advisor.bio.is_(None),
+                Advisor.bio == "",
+                Advisor.crawl_status != "detailed",
+            ),
             Advisor.homepage_url.is_not(None),
             Advisor.homepage_url != "",
         )
@@ -70,6 +82,10 @@ async def fetch_targets(tier: str, max_n: int, school_filter: str | None = None)
         )
         if school_filter:
             q = q.where(AdvisorSchool.name.like(f"%{school_filter}%"))
+        if college_filter:
+            college_names = [name.strip() for name in college_filter.split(",") if name.strip()]
+            if college_names:
+                q = q.where(or_(*[AdvisorCollege.name.like(f"%{name}%") for name in college_names]))
 
         result = await db.execute(q)
         return list(result.scalars().unique().all())
@@ -96,13 +112,25 @@ async def main():
     parser.add_argument("--tier", default="985", choices=["985", "211", "df", "all"])
     parser.add_argument("--max", type=int, default=200, help="max advisors to process this run")
     parser.add_argument("--school", help="filter by school name LIKE pattern (e.g. '清华')")
+    parser.add_argument("--college", help="filter by college name LIKE pattern; comma-separated patterns allowed")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
     log = setup_logging(LOG_PATH)
 
-    advisors = await fetch_targets(args.tier, args.max, school_filter=args.school)
-    log.info("found %d targets (tier=%s, school=%s)", len(advisors), args.tier, args.school)
+    advisors = await fetch_targets(
+        args.tier,
+        args.max,
+        school_filter=args.school,
+        college_filter=args.college,
+    )
+    log.info(
+        "found %d targets (tier=%s, school=%s, college=%s)",
+        len(advisors),
+        args.tier,
+        args.school,
+        args.college,
+    )
     if args.dry_run:
         for a in advisors[:20]:
             log.info("  %s | %s | %s | %s", a.school.name, a.college.name, a.name, a.homepage_url)
@@ -125,7 +153,8 @@ async def main():
         res = await crawl_one_advisor(a)
         if res.get("ok"):
             ok += 1; consecutive_fail = 0
-            log.info("    ✓ areas=%d", res.get("areas_n", 0))
+            status = "detailed" if res.get("bio_present") else "partial"
+            log.info("    ✓ %s areas=%d", status, res.get("areas_n", 0))
         else:
             err = res.get("error", "?")
             fail += 1

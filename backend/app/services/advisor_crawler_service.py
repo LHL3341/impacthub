@@ -19,13 +19,14 @@ import logging
 import re
 import ssl
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 from urllib.parse import urljoin, urlparse
 
 import chardet
 import httpx
 from bs4 import BeautifulSoup
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -78,6 +79,69 @@ REQUEST_HEADERS = {
 REQUEST_TIMEOUT = 25.0
 REQUEST_DELAY_SECONDS = 6.0  # politeness pause between scrape requests
 MAX_HTML_TOKENS = 12_000     # rough cap on cleaned HTML fed to LLM
+
+MANUAL_COLLEGE_SEED_PATH = (
+    Path(__file__).resolve().parents[3] / "pipeline" / "data" / "advisor_college_seeds.json"
+)
+
+
+def _load_manual_college_seeds() -> dict[str, dict]:
+    """Load manually maintained college entry URLs keyed by school name."""
+    if not MANUAL_COLLEGE_SEED_PATH.exists():
+        return {}
+
+    payload = json.loads(MANUAL_COLLEGE_SEED_PATH.read_text(encoding="utf-8"))
+    schools = payload.get("schools", [])
+    if not isinstance(schools, list):
+        raise ValueError("advisor_college_seeds.json: schools must be a list")
+
+    seeds: dict[str, dict] = {}
+    for school_seed in schools:
+        if not isinstance(school_seed, dict):
+            raise ValueError("advisor_college_seeds.json: each school seed must be an object")
+        school_name = (school_seed.get("school") or school_seed.get("school_name") or "").strip()
+        if not school_name:
+            raise ValueError("advisor_college_seeds.json: school is required")
+
+        colleges = school_seed.get("colleges", [])
+        if not isinstance(colleges, list):
+            raise ValueError(f"advisor_college_seeds.json: colleges for {school_name} must be a list")
+        if not colleges:
+            raise ValueError(f"advisor_college_seeds.json: colleges for {school_name} is empty")
+
+        normalized_colleges: list[dict] = []
+        for college_seed in colleges:
+            if not isinstance(college_seed, dict):
+                raise ValueError(f"advisor_college_seeds.json: college seed for {school_name} must be an object")
+            name = (college_seed.get("name") or "").strip()
+            url = (
+                college_seed.get("url")
+                or college_seed.get("homepage_url")
+                or ""
+            ).strip()
+            faculty_list_url = (
+                college_seed.get("faculty_list_url")
+                or college_seed.get("advisor_list_url")
+                or ""
+            ).strip()
+            if not name:
+                raise ValueError(f"advisor_college_seeds.json: college name is required for {school_name}")
+            if not url:
+                raise ValueError(f"advisor_college_seeds.json: url is required for {school_name} / {name}")
+            normalized_colleges.append({
+                "name": name,
+                "english_name": (college_seed.get("english_name") or "").strip(),
+                "discipline_category": (college_seed.get("discipline_category") or "").strip(),
+                "url": url,
+                "faculty_list_url": faculty_list_url,
+            })
+
+        seeds[school_name] = {
+            "college_index_url": (school_seed.get("college_index_url") or "").strip(),
+            "colleges": normalized_colleges,
+        }
+
+    return seeds
 
 
 # ──────────────────────────── HTTP helpers ────────────────────────────
@@ -699,10 +763,110 @@ NAVIGATION_BLACKLIST = {
     "公告", "中心", "组织", "机构", "下载", "资料", "服务", "管理",
     "研究", "实验", "课程", "导师", "教师", "教授", "教职", "师资",
     "本科", "硕士", "博士", "学生", "学位", "学院", "学部", "学系",
+    "尾页", "首页", "末页", "第一页", "工程师", "实验师", "技术专员",
 }
 
 # A "name-like" anchor: 2-4 Chinese characters, no English/digits, not a nav word
 _NAME_RE = re.compile(r"^[\u4e00-\u9fff·]{2,4}$")
+_ZJU_HOST_RE = re.compile(r"(^|\.)zju\.edu\.cn$", re.I)
+_TITLE_KEYWORDS = (
+    "教授", "副教授", "讲师", "研究员", "副研究员", "助理研究员",
+    "特聘教授", "求是", "百人计划", "院士", "博导", "硕导",
+)
+
+
+def _is_zju_url(url: str) -> bool:
+    host = urlparse(url).hostname or ""
+    return bool(_ZJU_HOST_RE.search(host))
+
+
+def _is_name_like(text: str) -> bool:
+    text = re.sub(r"\s+", "", text or "")
+    text = re.sub(r"[*\u2022\u25cf\[\]【】（）()]", "", text)
+    if not _NAME_RE.match(text):
+        return False
+    return not any(bad in text for bad in NAVIGATION_BLACKLIST)
+
+
+def _looks_like_academic_title(text: str) -> bool:
+    return any(k in (text or "") for k in _TITLE_KEYWORDS)
+
+
+def _extract_zju_plain_text_advisors(soup: BeautifulSoup, base_url: str) -> list[dict]:
+    """ZJU Webplus pages sometimes list teachers as plain table text, not anchors."""
+    candidates: list[dict] = []
+    seen_names: set[str] = set()
+
+    for li in soup.find_all("li"):
+        li_text = re.sub(r"\s+", " ", li.get_text(" ", strip=True)).strip()
+        if not _looks_like_academic_title(li_text):
+            continue
+        name = ""
+        name_el = li.select_one(".con1rmrt")
+        if name_el:
+            name = re.sub(r"\s+", "", name_el.get_text("", strip=True))
+        if not name:
+            img = li.find("img", alt=True)
+            if img:
+                name = re.sub(r"\s+", "", img["alt"])
+        if not _is_name_like(name) or name in seen_names:
+            continue
+
+        homepage = ""
+        for a in li.find_all("a", href=True):
+            href = urljoin(base_url, a["href"].strip())
+            host = urlparse(href).hostname or ""
+            if host == "person.zju.edu.cn":
+                homepage = href
+                break
+            if not homepage and not urlparse(href).path.rstrip("/").endswith("/list.htm"):
+                homepage = href
+
+        title = ""
+        title_match = re.search(r"([^\n，,；;]{0,12}(?:教授|研究员|讲师|院士))", li_text)
+        if title_match:
+            title = title_match.group(1).strip()[:60]
+            if title.startswith(name):
+                title = title[len(name):].strip(" ，,")[:60]
+        seen_names.add(name)
+        candidates.append({"name": name, "title": title, "homepage": homepage})
+
+    for tr in soup.find_all("tr"):
+        cells = [
+            re.sub(r"\s+", " ", cell.get_text(" ", strip=True)).strip()
+            for cell in tr.find_all(["td", "th"])
+        ]
+        if len(cells) < 2:
+            continue
+        for i, cell_text in enumerate(cells):
+            name = re.sub(r"\s+", "", cell_text)
+            if not _is_name_like(name) or name in seen_names:
+                continue
+            nearby = " ".join(cells[max(0, i - 1): i + 3])
+            if not _looks_like_academic_title(nearby):
+                continue
+            title = ""
+            if i + 1 < len(cells) and _looks_like_academic_title(cells[i + 1]):
+                title = cells[i + 1][:60]
+            seen_names.add(name)
+            candidates.append({"name": name, "title": title, "homepage": ""})
+
+    page_text = soup.get_text("\n", strip=True)
+    for match in re.finditer(
+        r"(?<![\u4e00-\u9fff])([\u4e00-\u9fff·]{2,4})[，,]\s*([^\n，,]{0,20}(?:教授|研究员|讲师|院士))",
+        page_text,
+    ):
+        name = match.group(1).strip()
+        if not _is_name_like(name) or name in seen_names:
+            continue
+        seen_names.add(name)
+        candidates.append({
+            "name": name,
+            "title": match.group(2).strip()[:60],
+            "homepage": "",
+        })
+
+    return candidates
 
 
 def heuristic_extract_advisors(html: str, base_url: str) -> list[dict]:
@@ -719,20 +883,21 @@ def heuristic_extract_advisors(html: str, base_url: str) -> list[dict]:
 
     candidates: list[dict] = []
     seen_names: set[str] = set()
+    is_zju = _is_zju_url(base_url)
     for a in soup.find_all("a", href=True):
         href_raw = a["href"].strip()
         if href_raw.startswith(("javascript:", "mailto:", "#")) or not href_raw:
             continue
         text = re.sub(r"\s+", "", a.get_text(strip=True))
         text = re.sub(r"[*\u2022\u25cf\[\]【】（）()]", "", text)
-        if not _NAME_RE.match(text):
-            continue
-        # Filter nav words by substring (e.g., "师资状况" contains "师资")
-        if any(bad in text for bad in NAVIGATION_BLACKLIST):
+        href = urljoin(base_url, href_raw)
+        if not _is_name_like(text) and (is_zju or _is_zju_url(href)):
+            text = re.sub(r"\s+", "", a.get("title", ""))
+            text = re.sub(r"[*\u2022\u25cf\[\]【】（）()]", "", text)
+        if not _is_name_like(text):
             continue
         if text in seen_names:
             continue
-        href = urljoin(base_url, href_raw)
         # Real teacher detail pages match either:
         #   (a) numeric ID in path (info/1111/3490.htm, people/123)
         #   (b) keyword path with pinyin slug (facultydetails/xxx, teacher/<name>, personal/...)
@@ -743,9 +908,19 @@ def heuristic_extract_advisors(html: str, base_url: str) -> list[dict]:
             "facultydetail", "teacherdetail", "facultyinfo", "personal",
             "teacher/", "faculty/", "people/", "prof/", "/szjs/",
         ))
+        has_zju_redirect = is_zju and (
+            "_redirect" in href_low or "articleid=" in href_low
+        )
+        has_zju_person_homepage = (urlparse(href).hostname or "") == "person.zju.edu.cn"
         # Generic file-extension fallback (when paired with digits)
         has_doc_ext = href_low.endswith((".htm", ".html", ".aspx", ".jsp"))
-        if not (has_keyword or (has_digit and has_doc_ext)):
+        is_cms_list_page = href_path.rstrip("/").endswith("/list.htm")
+        if not (
+            has_keyword
+            or has_zju_redirect
+            or has_zju_person_homepage
+            or (has_digit and has_doc_ext and not is_cms_list_page)
+        ):
             continue
         seen_names.add(text)
         candidates.append({
@@ -753,6 +928,13 @@ def heuristic_extract_advisors(html: str, base_url: str) -> list[dict]:
             "title": "",
             "homepage": href,
         })
+
+    if is_zju:
+        for advisor in _extract_zju_plain_text_advisors(soup, base_url):
+            if advisor["name"] in seen_names:
+                continue
+            seen_names.add(advisor["name"])
+            candidates.append(advisor)
 
     # Heuristic floor: faculty pages usually list ≥3 teachers; <3 likely false positives
     if len(candidates) < 3:
@@ -871,6 +1053,75 @@ async def crawl_school_colleges(
     errors: list[str] = []
     colleges_added = 0
     advisors_added = 0
+    colleges_updated = 0
+
+    manual_seed = _load_manual_college_seeds().get(school.name)
+    if manual_seed is not None:
+        existing = (await db.execute(
+            select(AdvisorCollege).where(AdvisorCollege.school_id == school.id)
+        )).scalars().all()
+        existing_by_name = {c.name: c for c in existing}
+
+        colleges_to_crawl: list[AdvisorCollege] = []
+        for c in manual_seed["colleges"]:
+            existing_college = existing_by_name.get(c["name"])
+            if existing_college:
+                old_homepage_url = existing_college.homepage_url
+                old_faculty_list_url = existing_college.faculty_list_url
+                if c.get("english_name"):
+                    existing_college.english_name = c["english_name"]
+                if c.get("discipline_category"):
+                    existing_college.discipline_category = c["discipline_category"]
+                existing_college.homepage_url = c.get("url", "")
+                if c.get("faculty_list_url"):
+                    existing_college.faculty_list_url = c["faculty_list_url"]
+                if (
+                    existing_college.advisors_crawled_at is None
+                    or old_homepage_url != existing_college.homepage_url
+                    or old_faculty_list_url != existing_college.faculty_list_url
+                ):
+                    colleges_to_crawl.append(existing_college)
+                colleges_updated += 1
+                continue
+            college = AdvisorCollege(
+                school_id=school.id,
+                name=c["name"],
+                english_name=c.get("english_name", ""),
+                discipline_category=c.get("discipline_category", ""),
+                homepage_url=c.get("url", ""),
+                faculty_list_url=c.get("faculty_list_url", ""),
+            )
+            db.add(college)
+            colleges_to_crawl.append(college)
+            colleges_added += 1
+
+        if manual_seed.get("college_index_url"):
+            school.faculty_index_url = manual_seed["college_index_url"]
+        school.colleges_crawled_at = datetime.utcnow()
+        await db.flush()
+
+        if fetch_advisors:
+            async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
+                for college in colleges_to_crawl:
+                    try:
+                        n = await _crawl_one_college_advisors(client, db, school, college)
+                        advisors_added += n
+                    except Exception as e:
+                        errors.append(f"{college.name}: {e}")
+                    await asyncio.sleep(REQUEST_DELAY_SECONDS)
+
+            school.advisor_count = (await db.execute(
+                select(func.count(Advisor.id)).where(Advisor.school_id == school.id)
+            )).scalar() or 0
+            school.advisors_crawled_at = datetime.utcnow()
+
+        return {
+            "colleges_added": colleges_added,
+            "colleges_updated": colleges_updated,
+            "advisors_added": advisors_added,
+            "errors": errors,
+            "source": "manual-seed",
+        }
 
     async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
         homepage_html = await fetch_html(client, school.homepage_url)
@@ -991,7 +1242,11 @@ async def crawl_school_colleges(
 
 FACULTY_SUB_KEYWORDS = (
     "教授", "副教授", "讲师", "研究员", "副研究员", "助理研究员",
-    "全部教师", "全体教师", "在职教师", "导师", "教师名录", "教师一览",
+    "全部教师", "全体教师", "在职教师", "导师", "教师", "教师名录", "教师一览",
+    "院士",
+)
+ZJU_FACULTY_ORG_KEYWORDS = (
+    "学科队伍", "研究所", "研究中心", "工程中心", "实验教学中心", "实验中心",
 )
 
 
@@ -1003,16 +1258,21 @@ def _find_faculty_sub_links(html: str, base_url: str) -> list[str]:
     soup = BeautifulSoup(html, "lxml")
     out: list[str] = []
     seen: set[str] = set()
+    is_zju = _is_zju_url(base_url)
     for a in soup.find_all("a", href=True):
         href_raw = a["href"].strip()
         if href_raw.startswith(("javascript:", "mailto:", "#")) or not href_raw:
             continue
         href = urljoin(base_url, href_raw)
+        if not urlparse(href).path.rstrip("/").endswith("/list.htm"):
+            continue
         text = re.sub(r"\s+", " ", a.get_text(" ", strip=True)).strip()
         text = re.sub(r"[*\u2022\u25cf\[\]【】]", "", text).strip()
-        if not text or len(text) > 20:
+        if not text or len(text) > 30:
             continue
-        if not any(k in text for k in FACULTY_SUB_KEYWORDS):
+        is_faculty_sub = any(k in text for k in FACULTY_SUB_KEYWORDS)
+        is_zju_org_sub = is_zju and any(k in text for k in ZJU_FACULTY_ORG_KEYWORDS)
+        if not (is_faculty_sub or is_zju_org_sub):
             continue
         if any(neg in text for neg in ("招聘", "聘任", "公告")):
             continue
@@ -1020,7 +1280,7 @@ def _find_faculty_sub_links(html: str, base_url: str) -> list[str]:
             continue
         seen.add(href)
         out.append(href)
-        if len(out) >= 6:
+        if len(out) >= 20:
             break
     return out
 
@@ -1032,14 +1292,17 @@ async def _crawl_one_college_advisors(
     college: AdvisorCollege,
 ) -> int:
     """Inner helper: crawl advisor stubs for one college. Returns count added."""
-    college_html = await fetch_html(client, college.homepage_url)
-    if not college_html:
-        return 0
-    await asyncio.sleep(REQUEST_DELAY_SECONDS)
-    link_info = await find_faculty_list_link(client, school, college, college_html)
-    if not link_info or not link_info.get("url"):
-        return 0
-    faculty_url = link_info["url"]
+    faculty_url = (college.faculty_list_url or "").strip()
+    if not faculty_url:
+        college_html = await fetch_html(client, college.homepage_url)
+        if not college_html:
+            return 0
+        await asyncio.sleep(REQUEST_DELAY_SECONDS)
+        link_info = await find_faculty_list_link(client, school, college, college_html)
+        if not link_info or not link_info.get("url"):
+            return 0
+        faculty_url = link_info["url"]
+        college.faculty_list_url = faculty_url
 
     await asyncio.sleep(REQUEST_DELAY_SECONDS)
     faculty_html = await fetch_html(client, faculty_url)
@@ -1048,22 +1311,21 @@ async def _crawl_one_college_advisors(
 
     advisors = await extract_advisor_list(client, school, college, faculty_url, faculty_html)
 
-    # Fallback: if the 师资 page is a CMS frame with no teacher anchors,
-    # follow sub-category links (教授 / 副教授 / 全部教师) and merge results.
-    if not advisors:
-        seen_names: set[str] = set()
-        merged: list[dict] = []
-        for sub_url in _find_faculty_sub_links(faculty_html, faculty_url):
-            await asyncio.sleep(REQUEST_DELAY_SECONDS)
-            sub_html = await fetch_html(client, sub_url)
-            if not sub_html:
+    # Some Webplus faculty pages are a category frame or only show one institute.
+    # Follow the visible sub-list pages and merge them without deleting existing DB rows.
+    seen_names: set[str] = {a["name"] for a in advisors}
+    for sub_url in _find_faculty_sub_links(faculty_html, faculty_url):
+        if sub_url == faculty_url:
+            continue
+        await asyncio.sleep(REQUEST_DELAY_SECONDS)
+        sub_html = await fetch_html(client, sub_url)
+        if not sub_html:
+            continue
+        for a in heuristic_extract_advisors(sub_html, sub_url):
+            if a["name"] in seen_names:
                 continue
-            for a in heuristic_extract_advisors(sub_html, sub_url):
-                if a["name"] in seen_names:
-                    continue
-                seen_names.add(a["name"])
-                merged.append(a)
-        advisors = merged
+            seen_names.add(a["name"])
+            advisors.append(a)
 
     if not advisors:
         return 0
@@ -1071,12 +1333,19 @@ async def _crawl_one_college_advisors(
     existing = (await db.execute(
         select(Advisor).where(Advisor.college_id == college.id)
     )).scalars().all()
-    existing_names = {a.name for a in existing}
+    existing_by_name = {a.name: a for a in existing}
 
     added = 0
     new_advisor_names: list[str] = []
     for a in advisors:
-        if a["name"] in existing_names:
+        existing_advisor = existing_by_name.get(a["name"])
+        if existing_advisor:
+            if a.get("title"):
+                existing_advisor.title = a["title"]
+            if a.get("homepage"):
+                existing_advisor.homepage_url = a["homepage"]
+            existing_advisor.source_url = faculty_url
+            existing_advisor.crawled_at = datetime.utcnow()
             continue
         db.add(Advisor(
             school_id=school.id,
@@ -1173,6 +1442,7 @@ ADVISOR_DETAIL_PROMPT = """你正在分析一位中国高校老师的个人主�
 - bio: 3-5 句话简介（**只复述主页里写的内容**，不要外推）。比一句话简介更完整，但不要写成长篇小传：
   - 优先保留主要任职、关键教育/工作经历、研究方向、代表性学术成果或论文指标。
   - 重要奖项、学生培养、招生表述如果主页明确写出，也可以压缩进简介；不要为了短而删掉最关键的信息。
+  - 只要主页文本里有姓名、职称、学院、研究方向、联系方式等基本信息，bio 就不要留空；可以客观写明“主页未提供更多经历/成果信息”。
 - education: [{{"degree":"博士","year":2018,"institution":"清华大学","advisor":"张三"}}, ...]（教育背景）
 - honors: ["IEEE Fellow", "杰青", ...]（明确奖项、荣誉、人才项目；尽量完整保留；不要收录博导/硕导、单位、研究方向）
 - recruiting_intent: 关于招生意愿/招生条件/招生方向的明确陈述（原文摘抄，不要总结）
@@ -1456,6 +1726,20 @@ async def _expand_zju_person_page(
     if parsed.netloc.lower() != "person.zju.edu.cn":
         return html, []
 
+    # ZJU's column JSON endpoints are frequently guarded by anti-spider
+    # validation. The reader render has proven to expose the same visible page
+    # content with one request, so use it first and keep column probing only as
+    # a fallback.
+    reader_errors: list[str] = []
+    try:
+        status_code, markdown = await _fetch_zju_reader_markdown(base_url)
+    except Exception as exc:
+        reader_errors.append(f"reader: {type(exc).__name__}")
+    else:
+        if status_code in (200, 202, 203) and markdown.strip() and "Markdown Content:" in markdown:
+            return f"{html}\n<section data-zju-reader='jina'><h2>ZJU Reader Render</h2><pre>{markdown}</pre></section>", []
+        reader_errors.append(f"reader: HTTP {status_code}")
+
     page_uid = ""
     api_column = ""
     site_path = "/person"
@@ -1482,7 +1766,7 @@ async def _expand_zju_person_page(
             columns.append((column_id, label))
 
     merged = [html]
-    errors: list[str] = []
+    errors: list[str] = reader_errors[:]
     merged_columns = 0
     for index, (column_id, label) in enumerate(columns[:12]):
         if index:
@@ -1666,6 +1950,7 @@ async def crawl_advisor_detail(
         advisor.research_areas = [str(a)[:80] for a in areas if str(a).strip()][:10]
 
     advisor.bio = _str("bio", 6000) or advisor.bio
+    bio_present = bool((advisor.bio or "").strip())
 
     edu = result.get("education")
     if isinstance(edu, list):
@@ -1689,7 +1974,7 @@ async def crawl_advisor_detail(
     if link_candidates or not adapter_errors:
         advisor.external_links = parsed_links or None
     advisor.raw_html = html[:100000]
-    advisor.crawl_status = "detailed"
+    advisor.crawl_status = "detailed" if bio_present else "partial"
     advisor.last_refreshed_at = datetime.utcnow()
     await db.flush()
     return {
@@ -1697,14 +1982,15 @@ async def crawl_advisor_detail(
         "advisor_id": advisor.id,
         "areas_n": len(advisor.research_areas or []),
         "external_links_n": len(advisor.external_links or []),
+        "bio_present": bio_present,
         "adapter_errors": adapter_errors,
     }
 
 
 async def crawl_college_advisors(db: AsyncSession, college: AdvisorCollege) -> dict:
     """Re-runnable entry: crawl advisors for an existing college record."""
-    if not college.homepage_url:
-        return {"advisors_added": 0, "errors": ["college has no homepage_url"]}
+    if not college.homepage_url and not college.faculty_list_url:
+        return {"advisors_added": 0, "errors": ["college has no homepage_url or faculty_list_url"]}
     school = await db.get(AdvisorSchool, college.school_id)
     if not school:
         return {"advisors_added": 0, "errors": ["school not found"]}
