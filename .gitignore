@@ -51,3 +51,7 @@ pipeline/data/xiaohongshu/output/
 
 # WeChat MP login cookie (sensitive — re-extract via DevTools when expired)
 pipeline/crawl/mentions_collect/.mp_cookie.json
+
+# Local agent instructions
+CLAUDE.md
+AGENTS.md

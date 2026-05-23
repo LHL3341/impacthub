@@ -218,20 +218,81 @@ def clean_html_for_llm(html: str, base_url: str) -> str:
 
 # ──────────────────────────── LLM helper ────────────────────────────
 
+def _fix_unescaped_quotes(raw: str) -> str:
+    """Fix unescaped bare double-quotes inside JSON string values.
+
+    LLM sometimes outputs Chinese book-title marks as bare ASCII quotes
+    (e.g. "入选教育部"新世纪"") which breaks json.loads. This scans each
+    line tracking JSON string state and replaces interior bare quotes with
+    a fullwidth left-double-quotation-mark so the JSON becomes parseable.
+    """
+    lines = raw.split("\n")
+    fixed_lines = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped in ("{", "}", "[", "]", "},", "],", ""):
+            fixed_lines.append(line)
+            continue
+        result_chars = []
+        in_string = False
+        i = 0
+        chars = list(line)
+        while i < len(chars):
+            c = chars[i]
+            if c == "\\" and in_string and i + 1 < len(chars):
+                result_chars.append(c)
+                result_chars.append(chars[i + 1])
+                i += 2
+                continue
+            if c == '"':
+                if not in_string:
+                    in_string = True
+                    result_chars.append(c)
+                else:
+                    rest = line[i + 1:].lstrip()
+                    if not rest or rest[0] in (",", ":", "]", "}", "\n"):
+                        in_string = False
+                        result_chars.append(c)
+                    else:
+                        result_chars.append("“")
+                i += 1
+            else:
+                result_chars.append(c)
+                i += 1
+        fixed_lines.append("".join(result_chars))
+    return "\n".join(fixed_lines)
+
+
 def _parse_json(text: str) -> Any:
     if not text:
         return None
     s = text.strip()
+    # Strip Claude <thinking>...</thinking> tags
+    s = re.sub(r"<thinking>.*?</thinking>", "", s, flags=re.DOTALL).strip()
+    # Strip markdown code block
     if s.startswith("```"):
         s = s.split("\n", 1)[1] if "\n" in s else s[3:]
         s = s.rsplit("```", 1)[0].strip()
     try:
         return json.loads(s)
     except json.JSONDecodeError:
-        m = re.search(r"(\[.*\]|\{.*\})", s, re.DOTALL)
-        if m:
+        pass
+    # Try fixing unescaped bare quotes
+    fixed = _fix_unescaped_quotes(s)
+    if fixed != s:
+        try:
+            return json.loads(fixed)
+        except json.JSONDecodeError:
+            pass
+    # Fallback: greedy regex for outermost JSON object or array
+    m = re.search(r"(\{.*\}|\[.*\])", s, re.DOTALL)
+    if m:
+        try:
+            return json.loads(m.group())
+        except json.JSONDecodeError:
+            fixed2 = _fix_unescaped_quotes(m.group())
             try:
-                return json.loads(m.group())
+                return json.loads(fixed2)
             except json.JSONDecodeError:
                 return None
     return None
