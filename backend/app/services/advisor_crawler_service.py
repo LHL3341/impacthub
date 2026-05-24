@@ -156,6 +156,16 @@ _META_REFRESH_RE = re.compile(
 )
 
 
+def _is_zju_person_generic_index_redirect(source_url: str, target_url: str) -> bool:
+    source = urlparse(source_url)
+    target = urlparse(target_url)
+    if source.netloc.lower() != "person.zju.edu.cn":
+        return False
+    if target.netloc.lower() != "person.zju.edu.cn":
+        return False
+    return source.path.rstrip("/") != "/index" and target.path.rstrip("/") == "/index"
+
+
 async def fetch_html(
     client: httpx.AsyncClient,
     url: str,
@@ -213,6 +223,9 @@ async def fetch_html(
                     if target and not target.startswith(("javascript:", "mailto:", "#")):
                         new_url = urljoin(str(resp.url), target)
                         if new_url != url:
+                            if _is_zju_person_generic_index_redirect(str(resp.url), new_url):
+                                logger.info("fetch_html ignored generic ZJU person redirect %s → %s", url, new_url)
+                                return None
                             logger.info("fetch_html JS-redirect %s → %s", url, new_url)
                             return await fetch_html(
                                 client, new_url, follow_js_redirect=True, _depth=_depth + 1,
@@ -764,6 +777,7 @@ NAVIGATION_BLACKLIST = {
     "研究", "实验", "课程", "导师", "教师", "教授", "教职", "师资",
     "本科", "硕士", "博士", "学生", "学位", "学院", "学部", "学系",
     "尾页", "首页", "末页", "第一页", "工程师", "实验师", "技术专员",
+    "博导", "硕导", "回国前",
 }
 
 # A "name-like" anchor: 2-4 Chinese characters, no English/digits, not a nav word
@@ -869,6 +883,153 @@ def _extract_zju_plain_text_advisors(soup: BeautifulSoup, base_url: str) -> list
     return candidates
 
 
+def _is_zju_icsr_faculty_url(url: str) -> bool:
+    parsed = urlparse(url or "")
+    if parsed.hostname != "icsr.zju.edu.cn":
+        return False
+    return parsed.path.rstrip("/") in {"/jsdw/list.htm", "/jzjr/list.htm"}
+
+
+def _clean_inline_text(text: str) -> str:
+    text = re.sub(r"\s+", " ", text or "").strip()
+    text = re.sub(r"\s+([，,。：；;/])", r"\1", text)
+    text = re.sub(r"([，,。：；;/])\s+", r"\1", text)
+    return text
+
+
+def _split_research_areas(text: str) -> list[str]:
+    text = re.sub(r"^研究方向[:：]\s*", "", text or "").strip(" 。；;，,")
+    if not text:
+        return []
+    parts = re.split(r"[、,，；;]", text)
+    return [p.strip(" /。；;，,")[:80] for p in parts if p.strip(" /。；;，,")][:10]
+
+
+def _zju_icsr_title_from_text(text: str) -> str:
+    title_match = re.search(
+        r"(求是讲席教授|求是特聘教授|长聘副教授|百人计划研究员|特聘研究员|"
+        r"教授|副教授|研究员|副研究员|助理研究员|讲师|院士)",
+        text,
+    )
+    return title_match.group(1)[:60] if title_match else ""
+
+
+def _merge_zju_icsr_profile(profiles: dict[str, dict], profile: dict) -> None:
+    name = profile.get("name", "")
+    if not name:
+        return
+    existing = profiles.get(name)
+    if not existing:
+        profiles[name] = profile
+        return
+    if profile.get("email") and not existing.get("email"):
+        existing["email"] = profile["email"]
+    if profile.get("title") and not existing.get("title"):
+        existing["title"] = profile["title"]
+    if profile.get("research_areas") and not existing.get("research_areas"):
+        existing["research_areas"] = profile["research_areas"]
+    if len(profile.get("bio", "")) > len(existing.get("bio", "")):
+        email = existing.get("email") or profile.get("email", "")
+        homepage = existing.get("homepage") or profile.get("homepage", "")
+        research_areas = existing.get("research_areas") or profile.get("research_areas") or []
+        title = existing.get("title") or profile.get("title", "")
+        existing.update(profile)
+        existing["email"] = email
+        existing["homepage"] = homepage
+        existing["research_areas"] = research_areas
+        existing["title"] = title
+
+
+def _extract_zju_icsr_advisor_profiles(html: str, base_url: str) -> dict[str, dict]:
+    """Extract inline profiles from 浙江大学网安学院教师队伍 pages."""
+    if not html or not _is_zju_icsr_faculty_url(base_url):
+        return {}
+    soup = BeautifulSoup(html, "lxml")
+    for tag in soup(["nav", "header", "footer", "script", "style", "form"]):
+        tag.decompose()
+
+    profiles: dict[str, dict] = {}
+
+    for tr in soup.find_all("tr"):
+        cells = [_clean_inline_text(td.get_text(" ", strip=True)) for td in tr.find_all(["td", "th"])]
+        cells = [c for c in cells if c]
+        if len(cells) < 5 or not cells[0].isdigit() or "@" not in cells[-1]:
+            continue
+        name = re.sub(r"\s+", "", cells[1])
+        if not _is_name_like(name):
+            continue
+        title = cells[2][:60]
+        direction = cells[3]
+        email = _extract_email_regex(cells[-1]) or cells[-1][:120]
+        bio = f"{name}，{title}。研究方向：{direction}。"
+        if email:
+            bio += f"邮箱：{email}。"
+        _merge_zju_icsr_profile(profiles, {
+            "name": name,
+            "title": title,
+            "homepage": "",
+            "email": email,
+            "research_areas": _split_research_areas(direction),
+            "bio": bio,
+            "raw_html": str(tr)[:100000],
+        })
+
+    is_dual_appointment_page = urlparse(base_url).path.rstrip("/") == "/jzjr/list.htm"
+    for td in soup.find_all("td"):
+        text = _clean_inline_text(td.get_text(" ", strip=True))
+        if not _looks_like_academic_title(text):
+            continue
+        if "研究方向" not in text and not is_dual_appointment_page:
+            continue
+
+        name = ""
+        homepage = ""
+        for a in td.find_all("a", href=True):
+            candidate = re.sub(r"\s+", "", a.get_text("", strip=True))
+            if _is_name_like(candidate):
+                name = candidate
+                homepage = urljoin(base_url, a["href"].strip())
+                break
+        if not name:
+            strong = td.find(["strong", "b"])
+            if strong:
+                candidate = re.sub(r"\s+", "", strong.get_text("", strip=True))
+                if _is_name_like(candidate):
+                    name = candidate
+        name_match = re.match(r"^([\u4e00-\u9fff·]{2,4})[，,]?\s*(.+)$", text)
+        if not name and name_match:
+            name = re.sub(r"\s+", "", name_match.group(1))
+        if not _is_name_like(name):
+            continue
+
+        paragraphs = [
+            _clean_inline_text(p.get_text(" ", strip=True))
+            for p in td.find_all("p")
+            if _clean_inline_text(p.get_text(" ", strip=True))
+        ]
+        direction = ""
+        if is_dual_appointment_page:
+            for paragraph in reversed(paragraphs):
+                if not any(skip in paragraph for skip in ("大学", "学院", "博士")):
+                    direction = paragraph
+                    break
+        else:
+            direction_match = re.search(r"研究方向[:：]\s*(.+)$", text)
+            direction = direction_match.group(1).strip(" 。；;，,") if direction_match else ""
+        email = _extract_email_regex(text)
+        _merge_zju_icsr_profile(profiles, {
+            "name": name,
+            "title": _zju_icsr_title_from_text(text),
+            "homepage": homepage,
+            "email": email,
+            "research_areas": _split_research_areas(direction),
+            "bio": text[:6000],
+            "raw_html": str(td)[:100000],
+        })
+
+    return profiles
+
+
 def heuristic_extract_advisors(html: str, base_url: str) -> list[dict]:
     """Extract teacher stubs from a 师资 page.
 
@@ -876,6 +1037,9 @@ def heuristic_extract_advisors(html: str, base_url: str) -> list[dict]:
     """
     if not html:
         return []
+    if _is_zju_icsr_faculty_url(base_url):
+        return list(_extract_zju_icsr_advisor_profiles(html, base_url).values())
+
     soup = BeautifulSoup(html, "lxml")
     # Strip nav/footer to reduce false positives
     for tag in soup(["nav", "header", "footer", "script", "style", "form"]):
@@ -1310,6 +1474,10 @@ async def _crawl_one_college_advisors(
         return 0
 
     advisors = await extract_advisor_list(client, school, college, faculty_url, faculty_html)
+    for advisor in advisors:
+        advisor.setdefault("source_url", faculty_url)
+        if advisor.get("bio"):
+            advisor.setdefault("raw_html", faculty_html[:100000])
 
     # Some Webplus faculty pages are a category frame or only show one institute.
     # Follow the visible sub-list pages and merge them without deleting existing DB rows.
@@ -1324,6 +1492,9 @@ async def _crawl_one_college_advisors(
         for a in heuristic_extract_advisors(sub_html, sub_url):
             if a["name"] in seen_names:
                 continue
+            a.setdefault("source_url", sub_url)
+            if a.get("bio"):
+                a.setdefault("raw_html", sub_html[:100000])
             seen_names.add(a["name"])
             advisors.append(a)
 
@@ -1344,7 +1515,18 @@ async def _crawl_one_college_advisors(
                 existing_advisor.title = a["title"]
             if a.get("homepage"):
                 existing_advisor.homepage_url = a["homepage"]
-            existing_advisor.source_url = faculty_url
+            if a.get("email"):
+                existing_advisor.email = str(a["email"])[:120]
+            if isinstance(a.get("research_areas"), list):
+                existing_advisor.research_areas = [
+                    str(area)[:80] for area in a["research_areas"] if str(area).strip()
+                ][:10]
+            if a.get("bio"):
+                existing_advisor.bio = str(a["bio"])[:6000]
+                existing_advisor.crawl_status = "detailed"
+                if a.get("raw_html"):
+                    existing_advisor.raw_html = str(a["raw_html"])[:100000]
+            existing_advisor.source_url = a.get("source_url", faculty_url)
             existing_advisor.crawled_at = datetime.utcnow()
             continue
         db.add(Advisor(
@@ -1353,8 +1535,14 @@ async def _crawl_one_college_advisors(
             name=a["name"],
             title=a.get("title", ""),
             homepage_url=a.get("homepage", ""),
-            source_url=faculty_url,
-            crawl_status="stub",
+            email=str(a.get("email", ""))[:120],
+            research_areas=[
+                str(area)[:80] for area in a.get("research_areas", []) if str(area).strip()
+            ][:10] if isinstance(a.get("research_areas"), list) else [],
+            bio=str(a.get("bio", ""))[:6000],
+            raw_html=str(a.get("raw_html", ""))[:100000],
+            source_url=a.get("source_url", faculty_url),
+            crawl_status="detailed" if a.get("bio") else "stub",
             crawled_at=datetime.utcnow(),
         ))
         added += 1
@@ -1901,18 +2089,53 @@ async def _prepare_advisor_page_context(
     return merged_html, text, links, adapter_errors
 
 
+async def _crawl_zju_icsr_source_detail(
+    client: httpx.AsyncClient,
+    advisor: Advisor,
+) -> dict:
+    source_url = (advisor.source_url or "").strip()
+    if not _is_zju_icsr_faculty_url(source_url):
+        return {"ok": False, "error": "no homepage_url"}
+
+    html = await fetch_html(client, source_url)
+    if not html:
+        return {"ok": False, "error": "source page fetch failed"}
+
+    profile = _extract_zju_icsr_advisor_profiles(html, source_url).get(advisor.name)
+    if not profile:
+        return {"ok": False, "error": "advisor not found in ZJU ICSR source page"}
+
+    advisor.title = str(profile.get("title") or "")[:60] or advisor.title
+    advisor.email = str(profile.get("email") or "")[:120] or advisor.email
+    areas = profile.get("research_areas")
+    if isinstance(areas, list):
+        advisor.research_areas = [str(a)[:80] for a in areas if str(a).strip()][:10]
+    advisor.bio = str(profile.get("bio") or "")[:6000] or advisor.bio
+    advisor.raw_html = str(profile.get("raw_html") or html[:100000])[:100000]
+    advisor.crawl_status = "detailed" if (advisor.bio or "").strip() else "partial"
+    advisor.last_refreshed_at = datetime.utcnow()
+    return {
+        "ok": True,
+        "advisor_id": advisor.id,
+        "areas_n": len(advisor.research_areas or []),
+        "external_links_n": len(advisor.external_links or []),
+        "bio_present": bool((advisor.bio or "").strip()),
+        "adapter_errors": [],
+    }
+
+
 async def crawl_advisor_detail(
     db: AsyncSession,
     advisor: Advisor,
 ) -> dict:
     """Phase 3: enrich one advisor's record by parsing their homepage with LLM."""
-    if not advisor.homepage_url:
-        return {"ok": False, "error": "no homepage_url"}
-
     school = await db.get(AdvisorSchool, advisor.school_id)
     college = await db.get(AdvisorCollege, advisor.college_id)
 
     async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
+        if not advisor.homepage_url:
+            return await _crawl_zju_icsr_source_detail(client, advisor)
+
         html, text, link_candidates, adapter_errors = await _prepare_advisor_page_context(client, advisor.homepage_url)
         if not html:
             return {"ok": False, "error": "; ".join(adapter_errors) or "homepage fetch failed"}
