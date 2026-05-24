@@ -997,7 +997,7 @@ def _merge_zju_icsr_long_introductions(
         for name in names:
             for m in re.finditer(rf"{re.escape(name)}\s*[，,]", text):
                 prefix = text[:m.start()].rstrip()
-                if prefix and prefix[-1] not in "。！？":
+                if prefix and prefix[-1] not in "。！？/":
                     continue
                 intro_head = text[m.start():m.start() + 120]
                 if not re.search(r"(教授|研究员|博导|博士生导师|博士|院士|讲席|特聘|百人|青年人才)", intro_head):
@@ -1601,6 +1601,7 @@ async def _crawl_one_college_advisors(
     added = 0
     new_advisor_names: list[str] = []
     for a in advisors:
+        is_source_adapter_detail = _is_zju_icsr_faculty_url(a.get("source_url", faculty_url))
         existing_advisor = existing_by_name.get(a["name"])
         if existing_advisor:
             if a.get("title"):
@@ -1617,7 +1618,7 @@ async def _crawl_one_college_advisors(
                 existing_advisor.external_links = a["external_links"][:30] or existing_advisor.external_links
             if a.get("bio"):
                 existing_advisor.bio = str(a["bio"])[:6000]
-                existing_advisor.crawl_status = "detailed"
+                existing_advisor.crawl_status = "partial" if is_source_adapter_detail else "detailed"
                 if a.get("raw_html"):
                     existing_advisor.raw_html = str(a["raw_html"])[:100000]
             existing_advisor.source_url = a.get("source_url", faculty_url)
@@ -1637,7 +1638,7 @@ async def _crawl_one_college_advisors(
             bio=str(a.get("bio", ""))[:6000],
             raw_html=str(a.get("raw_html", ""))[:100000],
             source_url=a.get("source_url", faculty_url),
-            crawl_status="detailed" if a.get("bio") else "stub",
+            crawl_status="partial" if is_source_adapter_detail and a.get("bio") else "detailed" if a.get("bio") else "stub",
             crawled_at=datetime.utcnow(),
         ))
         added += 1
@@ -2187,6 +2188,8 @@ async def _prepare_advisor_page_context(
 async def _crawl_zju_icsr_source_detail(
     client: httpx.AsyncClient,
     advisor: Advisor,
+    school: AdvisorSchool | None,
+    college: AdvisorCollege | None,
 ) -> dict:
     source_url = (advisor.source_url or "").strip()
     if not _is_zju_icsr_faculty_url(source_url):
@@ -2200,17 +2203,71 @@ async def _crawl_zju_icsr_source_detail(
     if not profile:
         return {"ok": False, "error": "advisor not found in ZJU ICSR source page"}
 
+    raw_html = str(profile.get("raw_html") or html[:100000])
+    text = _clean_advisor_page(raw_html)
+    link_candidates = _extract_link_candidates(raw_html, source_url)
+    for item in profile.get("external_links") or []:
+        if not isinstance(item, dict) or not item.get("url"):
+            continue
+        url = str(item["url"])
+        if any(candidate.get("url") == url for candidate in link_candidates):
+            continue
+        link_candidates.append({
+            "kind_hint": str(item.get("kind") or _classify_link_kind(url, str(item.get("label") or ""))),
+            "url": url,
+            "label": str(item.get("label") or "")[:120],
+            "source": "text",
+        })
+
+    prompt = ADVISOR_DETAIL_PROMPT.format(
+        name=advisor.name,
+        school_name=school.name if school else "",
+        college_name=college.name if college else "",
+        url=source_url,
+        text=text,
+        links=_format_link_candidates_for_prompt(link_candidates),
+    )
+    await asyncio.sleep(REQUEST_DELAY_SECONDS)
+    result = await _call_llm(client, prompt, max_tokens=4000)
+    if not isinstance(result, dict):
+        return {"ok": False, "error": "LLM returned non-dict"}
+
+    def _str(key: str, max_len: int = 300) -> str:
+        return str(result.get(key) or "")[:max_len]
+
     advisor.title = str(profile.get("title") or "")[:60] or advisor.title
-    advisor.email = str(profile.get("email") or "")[:120] or advisor.email
-    areas = profile.get("research_areas")
+    advisor.title = _str("title", 60) or advisor.title
+    advisor.is_doctoral_supervisor = _optional_bool(result.get("is_doctoral_supervisor"))
+    advisor.is_master_supervisor = _optional_bool(result.get("is_master_supervisor"))
+    advisor.email = _str("email", 120) or str(profile.get("email") or "")[:120] or advisor.email
+    advisor.office = _str("office", 200) or advisor.office
+    advisor.phone = _str("phone", 40) or advisor.phone
+    advisor.photo_url = _str("photo_url", 500) or advisor.photo_url
+    areas = result.get("research_areas") or profile.get("research_areas")
     if isinstance(areas, list):
         advisor.research_areas = [str(a)[:80] for a in areas if str(a).strip()][:10]
     if profile.get("homepage"):
         advisor.homepage_url = str(profile["homepage"])[:500]
-    if isinstance(profile.get("external_links"), list):
-        advisor.external_links = profile["external_links"][:30] or advisor.external_links
-    advisor.bio = str(profile.get("bio") or "")[:6000] or advisor.bio
-    advisor.raw_html = str(profile.get("raw_html") or html[:100000])[:100000]
+    advisor.bio = _str("bio", 6000) or advisor.bio
+    edu = result.get("education")
+    if isinstance(edu, list):
+        advisor.education = [
+            {
+                "degree": str(e.get("degree", ""))[:40],
+                "year": e.get("year") if isinstance(e.get("year"), int) else None,
+                "institution": str(e.get("institution", ""))[:120],
+                "advisor": str(e.get("advisor", ""))[:80],
+            }
+            for e in edu[:8]
+            if isinstance(e, dict)
+        ] or None
+    honors = result.get("honors")
+    if isinstance(honors, list):
+        advisor.honors = _sanitize_honors(honors) or None
+    advisor.recruiting_intent = _str("recruiting_intent", 3000) or advisor.recruiting_intent
+    parsed_links = _sanitize_external_links(result.get("external_links"), link_candidates)
+    advisor.external_links = parsed_links or profile.get("external_links") or None
+    advisor.raw_html = raw_html[:100000]
     advisor.crawl_status = "detailed" if (advisor.bio or "").strip() else "partial"
     advisor.last_refreshed_at = datetime.utcnow()
     return {
@@ -2233,7 +2290,7 @@ async def crawl_advisor_detail(
 
     async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
         if not advisor.homepage_url:
-            return await _crawl_zju_icsr_source_detail(client, advisor)
+            return await _crawl_zju_icsr_source_detail(client, advisor, school, college)
 
         html, text, link_candidates, adapter_errors = await _prepare_advisor_page_context(client, advisor.homepage_url)
         if not html:
