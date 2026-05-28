@@ -150,6 +150,47 @@
           "reason": "该单位不是复旦官网院系专业页中的教学学院，但其官网“研究生培养-导师队伍”直接列出 AI for Science、人工智能、智能机器人等方向导师，属于导师数据库需要覆盖的重点招生单位。"
         }
       ]
+    },
+    {
+      "school": "上海交通大学",
+      "college_index_url": "https://www.sjtu.edu.cn/xygk/yxsz.html",
+      "colleges": [
+        {
+          "name": "计算机学院",
+          "url": "https://cs.sjtu.edu.cn/",
+          "faculty_list_url": "https://cs.sjtu.edu.cn/jiaoshiml.html",
+          "discipline_category": "工学",
+          "reason": "上海交大原电子信息与电气工程学院（SEIEE）于近年拆分为多个独立学院；计算机学院（含网络空间安全学院、密码学院）的官网“师资队伍-教师名录”集中列出全体教师。"
+        },
+        {
+          "name": "人工智能学院",
+          "url": "https://soai.sjtu.edu.cn/",
+          "faculty_list_url": "https://soai.sjtu.edu.cn/cn/faculty/zzjs",
+          "discipline_category": "工学",
+          "reason": "学院官网“师资队伍-专职教师”页面（/cn/faculty/zzjs）列出全体专职教师；DB 原有该学院记录但 faculty_list_url 为空，仅抓到 39 个 stub，需以本入口替换。"
+        },
+        {
+          "name": "自动化与感知学院",
+          "url": "https://sais.sjtu.edu.cn/",
+          "faculty_list_url": "https://sais.sjtu.edu.cn/faculty.html",
+          "discipline_category": "工学",
+          "reason": "原 SEIEE 拆分后的独立学院；自动化、感知与机器人方向，官网“师资队伍-教师名录”集中列出教师。"
+        },
+        {
+          "name": "集成电路学院",
+          "url": "https://icisee.sjtu.edu.cn/",
+          "faculty_list_url": "https://icisee.sjtu.edu.cn/jiaoshiml.html",
+          "discipline_category": "工学",
+          "reason": "原 SEIEE 拆分后的独立学院（含信息与电子工程学院）；官网“师资队伍-教师名录”集中列出教师。"
+        },
+        {
+          "name": "电气工程学院",
+          "url": "https://see.sjtu.edu.cn/",
+          "faculty_list_url": "https://see.sjtu.edu.cn/jiaoshiml.html",
+          "discipline_category": "工学",
+          "reason": "原 SEIEE 拆分后的独立学院；电气工程方向覆盖控制、电力电子、信号处理，是 CSAI 关键词命中的相关学院之一。"
+        }
+      ]
     }
   ]
 }

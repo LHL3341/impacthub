@@ -1397,6 +1397,158 @@ def _fudan_extra_faculty_urls(base_url: str) -> list[str]:
     ]
 
 
+# ──────────────── SJTU adapter ────────────────
+# Four ex-SEIEE schools (cs/sais/icisee/see) share a Webplus-like CMS:
+#   - jiaoshiml.html / faculty.html ships an empty filter UI (0 anchors).
+#   - All teachers come back via POST /active/ajax_teacher_list.html with
+#     payload `page=N&cat_id=X&cat_code=Y&type=1&zm=All&zc=全部&search=`.
+#     Response is JSON {content, page, count} where content is an HTML
+#     fragment containing <a href="<host>/<cat_code>/<slug>.html">姓名</a>.
+# A separate path (soai.sjtu.edu.cn) ships 44 teachers as static anchors
+# under /cn/facultydetails/zzjs/<slug>; the generic heuristic over-filters
+# them, so we match by URL pattern directly.
+
+_SJTU_AJAX_HOST_RE = re.compile(
+    r"^(cs|sais|icisee|see)\.sjtu\.edu\.cn$", re.I
+)
+_SOAI_HOST_RE = re.compile(r"^soai\.sjtu\.edu\.cn$", re.I)
+
+
+def _is_sjtu_ajax_faculty_url(url: str) -> bool:
+    host = (urlparse(url).hostname or "").lower()
+    return bool(_SJTU_AJAX_HOST_RE.match(host))
+
+
+def _is_soai_faculty_url(url: str) -> bool:
+    host = (urlparse(url).hostname or "").lower()
+    return bool(_SOAI_HOST_RE.match(host))
+
+
+async def _extract_sjtu_via_ajax(
+    client: httpx.AsyncClient,
+    faculty_html: str,
+    faculty_url: str,
+) -> list[dict]:
+    """POST to SJTU CMS AJAX endpoint and paginate until exhausted."""
+    parsed = urlparse(faculty_url)
+    host = parsed.hostname or ""
+    if not host:
+        return []
+    cat_id_m = re.search(r"cat_id\s*[:=]\s*['\"]?(\d+)", faculty_html)
+    cat_code_m = re.search(r"cat_code\s*[:=]\s*['\"]([^'\"]+)['\"]", faculty_html)
+    cat_id = cat_id_m.group(1) if cat_id_m else "20"
+    cat_code = cat_code_m.group(1) if cat_code_m else "jiaoshiml"
+    endpoint = f"{parsed.scheme}://{host}/active/ajax_teacher_list.html"
+    detail_path_re = re.compile(
+        rf"/(?:{re.escape(cat_code)})/[^/?#]+\.html$"
+    )
+
+    advisors: list[dict] = []
+    seen_urls: set[str] = set()
+    seen_names: set[str] = set()
+    for page in range(1, 31):
+        payload = {
+            "page": str(page),
+            "cat_id": cat_id,
+            "cat_code": cat_code,
+            "type": "1",
+            "zm": "All",
+            "zc": "全部",
+            "search": "",
+        }
+        try:
+            r = await client.post(
+                endpoint,
+                data=payload,
+                headers={
+                    "X-Requested-With": "XMLHttpRequest",
+                    "Referer": faculty_url,
+                },
+                timeout=30,
+            )
+        except Exception:
+            break
+        if r.status_code != 200:
+            break
+        try:
+            data = r.json()
+        except ValueError:
+            break
+        content = (data.get("content") or "").strip()
+        if not content:
+            break
+        soup = BeautifulSoup(content, "lxml")
+        page_added = 0
+        for a in soup.find_all("a", href=True):
+            href = urljoin(faculty_url, a["href"].strip())
+            if host not in href or not detail_path_re.search(href):
+                continue
+            name = ""
+            name_div = a.select_one(".name")
+            if name_div:
+                first = name_div.find(string=True, recursive=False)
+                if first:
+                    name = first.strip()
+            if not name:
+                name = a.get_text(" ", strip=True)
+            name = re.sub(r"\s+", "", name)
+            name = re.sub(r"[*\u2022\u25cf]", "", name)
+            if not _is_name_like(name):
+                continue
+            if href in seen_urls or name in seen_names:
+                continue
+            seen_urls.add(href)
+            seen_names.add(name)
+            title = ""
+            span = a.select_one(".name span")
+            if span:
+                title = span.get_text(" ", strip=True)
+            advisors.append({
+                "name": name,
+                "homepage": href,
+                "title": title,
+                "source_url": faculty_url,
+            })
+            page_added += 1
+        if page_added == 0:
+            break
+        total = data.get("count")
+        try:
+            if total is not None and int(total) <= page:
+                break
+        except (TypeError, ValueError):
+            pass
+        await asyncio.sleep(REQUEST_DELAY_SECONDS)
+
+    return advisors
+
+
+def _extract_soai_static_advisors(html: str, base_url: str) -> list[dict]:
+    """soai.sjtu.edu.cn lists 44 teachers as static <a> with /facultydetails/ URLs."""
+    soup = BeautifulSoup(html, "lxml")
+    advisors: list[dict] = []
+    seen = set()
+    for a in soup.find_all("a", href=True):
+        href = a["href"]
+        if "/facultydetails/" not in href:
+            continue
+        full = urljoin(base_url, href)
+        text = re.sub(r"\s+", "", a.get_text(" ", strip=True))
+        text = re.sub(r"[*\u2022\u25cf]", "", text)
+        if not _is_name_like(text):
+            continue
+        if full in seen:
+            continue
+        seen.add(full)
+        advisors.append({
+            "name": text,
+            "homepage": full,
+            "title": "",
+            "source_url": base_url,
+        })
+    return advisors
+
+
 def _is_fudan_ai_faculty_url(url: str) -> bool:
     parsed = urlparse(url)
     return (parsed.hostname or "").lower() == "ai.fudan.edu.cn" and parsed.path in {
@@ -2053,6 +2205,31 @@ async def _crawl_one_college_advisors(
             if a["name"] in seen_dynamic_names:
                 continue
             seen_dynamic_names.add(a["name"])
+            advisors.append(a)
+    if _is_sjtu_ajax_faculty_url(faculty_url):
+        # The generic extractor scrapes admin-department links from the SJTU
+        # homepage navigation (e.g. /index_links_ysgdw/119.html → 资实处, 工会).
+        # The AJAX adapter is authoritative for SJTU CMS schools, so drop any
+        # generic-extracted entry whose URL looks like an admin redirect or
+        # otherwise doesn't match the canonical /<cat_code>/<slug>.html path.
+        advisors = [
+            a for a in advisors
+            if "index_links" not in (a.get("homepage") or "")
+        ]
+        sjtu_advisors = await _extract_sjtu_via_ajax(client, faculty_html, faculty_url)
+        seen_sjtu_names = {a["name"] for a in advisors}
+        for a in sjtu_advisors:
+            if a["name"] in seen_sjtu_names:
+                continue
+            seen_sjtu_names.add(a["name"])
+            advisors.append(a)
+    if _is_soai_faculty_url(faculty_url):
+        soai_advisors = _extract_soai_static_advisors(faculty_html, faculty_url)
+        seen_soai_names = {a["name"] for a in advisors}
+        for a in soai_advisors:
+            if a["name"] in seen_soai_names:
+                continue
+            seen_soai_names.add(a["name"])
             advisors.append(a)
     for advisor in advisors:
         advisor.setdefault("source_url", faculty_url)
