@@ -229,7 +229,8 @@
           "url": "https://www.ee.tsinghua.edu.cn/",
           "faculty_list_url": "https://www.ee.tsinghua.edu.cn/ryqk/teacher/dlyxtyjs/js2.htm",
           "discipline_category": "工学",
-          "reason": "清华电子工程系师资按 7 个研究所 × 3 个职级 (教授/副教授/讲师) 分为 21 个子页；此 URL 为电路与系统研究所教授页，是真正的『枢纽页』 — 静态 HTML 里含跨研究所的导航链接，_find_thu_faculty_sub_links 借此发现并 LLM 抽取所有 20 个 sibling 子页。"
+          "reason": "清华电子工程系师资按 7 个研究所 × 3 个职级 (教授/副教授/讲师) 分为 21 个子页；此 URL 为电路与系统研究所教授页，是真正的『枢纽页』 — 静态 HTML 里含跨研究所的导航链接，_find_thu_faculty_sub_links 借此发现并 LLM 抽取所有 20 个 sibling 子页。",
+          "known_issue": "stage 4 抓 bio 时，大约 53/78 个老师的个人主页落在 web.ee.tsinghua.edu.cn 子域上，该子域 2026-05-30 起持续返回 503 Service Unavailable（非临时限流，重跑无效）。当前 bio 覆盖率 32% (25/78)，剩余 53 个等子域恢复后重跑 04_advisor_details.py --school 清华 --college 电子工程系 即可补完。"
         },
         {
           "name": "信息科学技术学院",
