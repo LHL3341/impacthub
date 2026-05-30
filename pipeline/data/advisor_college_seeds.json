@@ -191,6 +191,68 @@
           "reason": "原 SEIEE 拆分后的独立学院；电气工程方向覆盖控制、电力电子、信号处理，是 CSAI 关键词命中的相关学院之一。"
         }
       ]
+    },
+    {
+      "school": "清华大学",
+      "college_index_url": "https://www.tsinghua.edu.cn/yxsz.htm",
+      "colleges": [
+        {
+          "name": "人工智能学院",
+          "url": "https://collegeai.tsinghua.edu.cn/",
+          "faculty_list_url": "https://collegeai.tsinghua.edu.cn/rydw.htm",
+          "discipline_category": "工学",
+          "reason": "清华 2024 年新成立的人工智能学院；官网“人员队伍”页直接列出全体教师。"
+        },
+        {
+          "name": "软件学院",
+          "url": "https://www.thss.tsinghua.edu.cn/",
+          "faculty_list_url": "https://www.thss.tsinghua.edu.cn/szdw/jsml.htm",
+          "discipline_category": "工学",
+          "reason": "清华软件学院官网“师资队伍-教师名录”集中列出全体教师。"
+        },
+        {
+          "name": "集成电路学院",
+          "url": "http://www.sic.tsinghua.edu.cn/",
+          "faculty_list_url": "http://www.sic.tsinghua.edu.cn/szdw/jyry.htm",
+          "discipline_category": "工学",
+          "reason": "清华集成电路学院（前身为微纳电子系 + 电子工程系部分）官网“师资队伍-教研人员”页列出全体教研人员。"
+        },
+        {
+          "name": "自动化系",
+          "url": "https://www.au.tsinghua.edu.cn/",
+          "faculty_list_url": "https://www.au.tsinghua.edu.cn/szdw/jsdw1/ayjscz.htm",
+          "discipline_category": "工学",
+          "reason": "清华自动化系官网“按研究所查找”页面以静态 HTML 列出 88+ 个老师姓名链接，是覆盖最全的师资入口。"
+        },
+        {
+          "name": "电子工程系",
+          "url": "https://www.ee.tsinghua.edu.cn/",
+          "faculty_list_url": "https://www.ee.tsinghua.edu.cn/ryqk/teacher/dlyxtyjs/js2.htm",
+          "discipline_category": "工学",
+          "reason": "清华电子工程系师资按 7 个研究所 × 3 个职级 (教授/副教授/讲师) 分为 21 个子页；此 URL 为电路与系统研究所教授页，是真正的『枢纽页』 — 静态 HTML 里含跨研究所的导航链接，_find_thu_faculty_sub_links 借此发现并 LLM 抽取所有 20 个 sibling 子页。"
+        },
+        {
+          "name": "信息科学技术学院",
+          "url": "https://www.sist.tsinghua.edu.cn/",
+          "faculty_list_url": "https://www.sist.tsinghua.edu.cn/jsdw/jsml.htm",
+          "discipline_category": "工学",
+          "reason": "清华信息学院（cs/ee/auto/sw 上级学部）的“教授名录”汇总页；与下属系会有重叠教师，但通过姓名去重不会重复入库。"
+        },
+        {
+          "name": "交叉信息研究院",
+          "url": "https://iiis.tsinghua.edu.cn/",
+          "faculty_list_url": "https://iiis.tsinghua.edu.cn/rydw.htm",
+          "discipline_category": "工学",
+          "reason": "清华交叉信息研究院（含姚班/智班）官网“人员队伍”页列出全职/兼职教师。"
+        },
+        {
+          "name": "高等研究院",
+          "url": "https://www.ias.tsinghua.edu.cn/",
+          "faculty_list_url": "https://www.ias.tsinghua.edu.cn/yjry/jy.htm",
+          "discipline_category": "理学",
+          "reason": "清华高研院“研究人员-教研系列”页直接列出全部教研人员；CS/AI 关键词不直接命中，靠 04_advisor_details --college 显式带入。"
+        }
+      ]
     }
   ]
 }

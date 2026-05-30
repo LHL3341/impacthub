@@ -1523,6 +1523,59 @@ async def _extract_sjtu_via_ajax(
     return advisors
 
 
+# ──────────────── THU adapter (title-anchor pattern) ────────────────
+# Several Tsinghua Webplus-skin colleges (collegeai, iiis, …) render teacher
+# cards as <a href=".../<slug>.htm" title="姓名"><div class="img"><img></div></a>
+# — the chinese name only lives in the `title` attribute, so the colleague's
+# heuristic (which scans <a> inner text) finds nothing. Catch this pattern by
+# matching anchors whose `title` is name-like and whose path is not a nav slug.
+
+_THU_HOST_RE = re.compile(r"(^|\.)tsinghua\.edu\.cn$", re.I)
+_THU_NAV_PATH_RE = re.compile(
+    r"/(?:index|xygk|xygk1|xyjj|yzzc|yzjy|xyld|yxld|lsyg|xrld|lrld|zzjg|"
+    r"xspy|rcpy|rczp|gkzp|jszp|kxyj|kxyj1|xwdt|tzgg|xwzx|xshd|xyfc|"
+    r"zsxx|dwgz|zbfc|llxx)\b",
+    re.I,
+)
+
+
+def _is_thu_url(url: str) -> bool:
+    host = (urlparse(url).hostname or "").lower()
+    return bool(_THU_HOST_RE.search(host))
+
+
+def _extract_thu_via_title_anchor(html: str, base_url: str) -> list[dict]:
+    """Match <a title="姓名" href="...">...</a> teacher cards on THU pages."""
+    soup = BeautifulSoup(html, "lxml")
+    advisors: list[dict] = []
+    seen_href: set[str] = set()
+    seen_names: set[str] = set()
+    base_no_hash = base_url.split("#", 1)[0].rstrip("/")
+    for a in soup.find_all("a", href=True):
+        title = (a.get("title") or "").strip()
+        if not _is_name_like(title):
+            continue
+        href = urljoin(base_url, a["href"].strip())
+        path = urlparse(href).path
+        if _THU_NAV_PATH_RE.search(path):
+            continue
+        # Anchor-fragment links (.../page.htm#sz1) point back at the current
+        # page section, not a teacher detail page.
+        if href.split("#", 1)[0].rstrip("/") == base_no_hash:
+            continue
+        if href in seen_href or title in seen_names:
+            continue
+        seen_href.add(href)
+        seen_names.add(title)
+        advisors.append({
+            "name": title,
+            "homepage": href,
+            "title": "",
+            "source_url": base_url,
+        })
+    return advisors
+
+
 def _extract_soai_static_advisors(html: str, base_url: str) -> list[dict]:
     """soai.sjtu.edu.cn lists 44 teachers as static <a> with /facultydetails/ URLs."""
     soup = BeautifulSoup(html, "lxml")
@@ -1652,6 +1705,66 @@ def heuristic_extract_advisors(html: str, base_url: str) -> list[dict]:
     return candidates
 
 
+EXTRACT_ADVISOR_LLM_PROMPT = """你正在分析一个中国大学某学院的师资页面，从 HTML 中**仅提取真实的教师/研究人员姓名 + 详情页 URL**。
+
+### 师资页 URL: {url}
+
+### HTML（已剔除脚本/样式，保留链接）
+{html}
+
+### 输出严格 JSON 数组（不要 markdown、不要解释）
+[
+  {{"name": "中文姓名 (2-4 汉字)", "homepage": "https://学校官网下的个人详情页 URL，没有则空字符串", "title": "教授/副教授/讲师/研究员/院士... 看不出留空"}}
+]
+
+### 必须遵守
+- 不要把"师资队伍"、"教师名录"、"院士学者"、"长聘教授"、"准聘教授"、"行政团队"、"教师招聘"、"学院领导"、"通知公告"、"新闻动态"、"学术报告"、"研究方向"、"概述"、"概况"、"简介"、"学院概况"、"两院院士"、"国际交流"、"党建专栏"、"系友天地"、"科学研究"、"教育教学"、"招生动态"、"博士后队伍"、"客座教授"、"研究系列"、"教学系列"、"全职教师"、"兼职教师"、"双聘教授"、"名誉教授"、"特殊聘任"、"招生招聘"、"机构设置"、"组织机构"、"人才培养"、"科研成果"、"博导名单" 等**导航词**当成姓名
+- 不要把书名/课程名/会议名/职位名当成姓名
+- 真实姓名通常 2-4 个汉字，每页应有 10-200 个；如果你只能挑出 < 5 个真名，宁可返回 `[]` 也不要把 nav 当姓名凑数
+- homepage 只输出页面里**实际出现过的 URL**，不要编造；同一教师在 HTML 中没有详情页链接时 homepage 留空"""
+
+
+async def _llm_extract_advisors(
+    client: httpx.AsyncClient,
+    html: str,
+    url: str,
+) -> list[dict]:
+    """LLM-based advisor extraction. Returns [] for sparse/no-data pages."""
+    cleaned = clean_html_for_llm(html, url)
+    if not cleaned or len(cleaned) < 200:
+        return []
+    prompt = EXTRACT_ADVISOR_LLM_PROMPT.format(url=url, html=cleaned[:30000])
+    parsed = await _call_llm(client, prompt, max_tokens=8000)
+    if not isinstance(parsed, list):
+        return []
+    out: list[dict] = []
+    seen_names: set[str] = set()
+    seen_urls: set[str] = set()
+    for item in parsed:
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("name", "")).strip()
+        if not _is_name_like(name):
+            continue
+        hp = str(item.get("homepage", "")).strip()
+        if hp:
+            hp = urljoin(url, hp)
+        if name in seen_names and not hp:
+            continue
+        if hp and hp in seen_urls:
+            continue
+        seen_names.add(name)
+        if hp:
+            seen_urls.add(hp)
+        out.append({
+            "name": name,
+            "homepage": hp,
+            "title": str(item.get("title", "")).strip()[:80],
+            "source_url": url,
+        })
+    return out
+
+
 async def extract_advisor_list(
     client: httpx.AsyncClient,
     school: AdvisorSchool,
@@ -1659,13 +1772,14 @@ async def extract_advisor_list(
     faculty_url: str,
     faculty_html: str,
 ) -> list[dict]:
-    """Heuristic-first advisor extraction. Falls back to LLM only if heuristic returns 0.
-
-    Pure regex/BS4 catches typical 师资 pages where each teacher is an <a> linking to detail.
-    For pages that use cards / no anchors, we'd need LLM but keep it as a future fallback.
-    """
+    """Heuristic-first; falls back to LLM when heuristic returns nothing usable."""
     advisors = heuristic_extract_advisors(faculty_html, faculty_url)
-    return advisors
+    if advisors:
+        return advisors
+    out = await _llm_extract_advisors(client, faculty_html, faculty_url)
+    if out:
+        logger.info("extract_advisor_list LLM fallback: %s → %d teachers", faculty_url, len(out))
+    return out
 
 
 # ──────────────────────────── Orchestrator ────────────────────────────
@@ -1975,11 +2089,67 @@ def _same_page_url(a: str, b: str) -> bool:
     )
 
 
+_THU_INSTITUTE_TEXT_RE = re.compile(r"(研究所|研究中心|教学中心|实验中心|学组|课题组)$")
+_THU_RANK_TEXT_RE = re.compile(r"^(教授|副教授|讲师|研究员|副研究员)$")
+
+
+def _find_thu_faculty_sub_links(html: str, base_url: str) -> list[str]:
+    """THU faculty pages partition across institute or rank sub-pages
+    (au.tsinghua's /szdw/jsdw1/ayjscz/<slug>.htm; ee.tsinghua's
+    /ryqk/teacher/<institute_slug>/<rank>.htm).
+
+    We accept anchors whose text is an institute label (含 研究所/中心) OR
+    a faculty rank (教授/副教授/讲师/研究员). Per-letter pages (按姓氏 A-Z)
+    duplicate the institute partition and are skipped.
+    """
+    if not html or not _is_thu_url(base_url):
+        return []
+    soup = BeautifulSoup(html, "lxml")
+    base_parsed = urlparse(base_url)
+    base_segments = [s for s in base_parsed.path.split("/") if s]
+    # Allowed path prefix = base path stripped of {filename} for "single-file"
+    # pages (au) and of {dir, filename} for "dir/file" pages (ee).
+    prefix_depth = max(1, len(base_segments) - (2 if base_segments[-1].endswith(".htm") and len(base_segments) >= 2 else 1))
+    allowed_prefix = "/" + "/".join(base_segments[:prefix_depth]) + "/"
+    out: list[str] = []
+    seen: set[str] = set()
+    for a in soup.find_all("a", href=True):
+        href_raw = a["href"].strip()
+        if href_raw.startswith(("javascript:", "mailto:", "#")) or not href_raw:
+            continue
+        href = urljoin(base_url, href_raw)
+        if _same_page_url(href, base_url):
+            continue
+        parsed = urlparse(href)
+        if parsed.hostname != base_parsed.hostname:
+            continue
+        if not parsed.path.startswith(allowed_prefix):
+            continue
+        if not parsed.path.endswith(".htm"):
+            continue
+        text = re.sub(r"\s+", " ", a.get_text(" ", strip=True)).strip()
+        if not text:
+            continue
+        if not (_THU_INSTITUTE_TEXT_RE.search(text) or _THU_RANK_TEXT_RE.match(text)):
+            continue
+        if href in seen:
+            continue
+        seen.add(href)
+        out.append(href)
+        if len(out) >= 40:
+            break
+    return out
+
+
 def _find_faculty_sub_links(html: str, base_url: str) -> list[str]:
     """When a 师资 page is just a CMS frame, look for sub-listing pages
     (e.g. 教授 / 副教授 / 全部教师) on it."""
     if not html:
         return []
+    # THU has its own sub-page convention — institutes / surname letters
+    thu_links = _find_thu_faculty_sub_links(html, base_url)
+    if thu_links:
+        return thu_links
     soup = BeautifulSoup(html, "lxml")
     out: list[str] = []
     seen: set[str] = set()
@@ -2231,6 +2401,16 @@ async def _crawl_one_college_advisors(
                 continue
             seen_soai_names.add(a["name"])
             advisors.append(a)
+    if _is_thu_url(faculty_url):
+        thu_advisors = _extract_thu_via_title_anchor(faculty_html, faculty_url)
+        # Some THU pages have ≤10 nav items with non-empty title attrs that pass
+        # `_is_name_like` (两院院士 / 国际交流 / 概述 / 数学 / …). Treat the
+        # title-anchor result as reliable only when heuristic_extract_advisors
+        # found nothing AND we got a healthy batch (≥15) — that's the signature
+        # of pages like collegeai/rydw.htm and iiis/rydw.htm.
+        if not advisors and len(thu_advisors) >= 15:
+            for a in thu_advisors:
+                advisors.append(a)
     for advisor in advisors:
         advisor.setdefault("source_url", faculty_url)
         if advisor.get("bio"):
@@ -2246,7 +2426,12 @@ async def _crawl_one_college_advisors(
         sub_html = await fetch_html(client, sub_url)
         if not sub_html:
             continue
-        for a in heuristic_extract_advisors(sub_html, sub_url):
+        sub_advisors = heuristic_extract_advisors(sub_html, sub_url)
+        if not sub_advisors:
+            sub_advisors = await _llm_extract_advisors(client, sub_html, sub_url)
+            if sub_advisors:
+                logger.info("sub-page LLM fallback: %s → %d teachers", sub_url, len(sub_advisors))
+        for a in sub_advisors:
             if a["name"] in seen_names:
                 continue
             a.setdefault("source_url", sub_url)
