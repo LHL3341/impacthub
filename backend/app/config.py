@@ -28,6 +28,17 @@ LLM_BUZZ_MODEL: str = _os.environ.get("LLM_BUZZ_MODEL", "gpt-5")
 # Lightweight fallback when the primary path fails or for small JSON tasks
 LLM_FALLBACK_MODEL: str = _os.environ.get("LLM_FALLBACK_MODEL", "gpt-5-mini")
 
+# Recommendation system
+DASHSCOPE_API_KEY: str = _os.environ.get("DASHSCOPE_API_KEY", "")
+DASHSCOPE_BASE_URL: str = _os.environ.get(
+    "DASHSCOPE_BASE_URL",
+    "https://dashscope.aliyuncs.com/compatible-mode/v1",
+).rstrip("/")
+DASHSCOPE_EMBEDDING_MODEL: str = _os.environ.get("DASHSCOPE_EMBEDDING_MODEL", "text-embedding-v4")
+DASHSCOPE_EMBEDDING_DIMENSIONS: int = int(_os.environ.get("DASHSCOPE_EMBEDDING_DIMENSIONS", "1024"))
+MINERU_PATH: str = _os.environ.get("MINERU_PATH", "mineru")
+RECOMMENDATION_TOP_N: int = int(_os.environ.get("RECOMMENDATION_TOP_N", "3"))
+
 REFRESH_INTERVAL_HOURS = 6
 
 MILESTONE_THRESHOLDS = {

@@ -1,0 +1,259 @@
+{
+  "_meta": {
+    "description": "人工维护的重点学校学院入口清单。某学校出现在这里时，02_colleges 会以这里的 colleges 为准；没出现的学校继续走原自动发现逻辑。",
+    "schema_version": 1,
+    "fields": {
+      "school": "学校中文全名，必须和 advisor_schools.name 一致",
+      "college_index_url": "人工确认这批学院入口时使用的学校院系列表页，可为空",
+      "colleges[].name": "学院/系/学部中文名，必填",
+      "colleges[].url": "学院主页 URL，必填",
+      "colleges[].faculty_list_url": "师资/导师列表 URL，可选；填写后 03_advisor_stubs 会直接使用它",
+      "colleges[].discipline_category": "一级学科门类，可选",
+      "colleges[].reason": "人工选择原因，只给人看，不写入数据库"
+    }
+  },
+  "schools": [
+    {
+      "school": "浙江大学",
+      "college_index_url": "https://www.zju.edu.cn/xywxw/list.htm",
+      "colleges": [
+        {
+          "name": "光电科学与工程学院",
+          "url": "http://opt.zju.edu.cn/",
+          "faculty_list_url": "http://opt.zju.edu.cn/gdgcyjs/list.htm",
+          "discipline_category": "工学",
+          "reason": "浙江大学官网学院（系）页面将其列入信息学部；学院官网“教师队伍”下的“学科队伍”分研究所列出教师。"
+        },
+        {
+          "name": "信息与电子工程学院",
+          "url": "http://www.isee.zju.edu.cn/",
+          "faculty_list_url": "http://www.isee.zju.edu.cn/jsss/list.htm",
+          "discipline_category": "工学",
+          "reason": "浙江大学官网学院（系）页面将其列入信息学部；学院官网“师资队伍-教师名录”下按研究所列出教师。"
+        },
+        {
+          "name": "控制科学与工程学院",
+          "url": "http://www.cse.zju.edu.cn/",
+          "faculty_list_url": "http://www.cse.zju.edu.cn/ys/list.htm",
+          "discipline_category": "工学",
+          "reason": "浙江大学官网学院（系）页面将其列入信息学部；学院首页导航中“人事工作-师资队伍”指向该入口。"
+        },
+        {
+          "name": "计算机科学与技术学院",
+          "url": "http://www.cs.zju.edu.cn/",
+          "faculty_list_url": "http://www.cs.zju.edu.cn/csen/27003/list.htm",
+          "discipline_category": "工学",
+          "reason": "浙江大学官网学院（系）页面将其列入信息学部；学院中文网“师资队伍-教师名录”直接列出教师。"
+        },
+        {
+          "name": "网络空间安全学院",
+          "url": "https://icsr.zju.edu.cn/",
+          "faculty_list_url": "https://icsr.zju.edu.cn/jsdw/list.htm",
+          "discipline_category": "工学",
+          "reason": "浙江大学官网学院（系）页面将其作为计算机科学与技术学院下属/相关单位列出；学院首页导航中“师资队伍-教师队伍”指向该入口。"
+        },
+        {
+          "name": "软件学院",
+          "url": "http://www.cst.zju.edu.cn/",
+          "faculty_list_url": "http://www.cst.zju.edu.cn/szdw/list.htm",
+          "discipline_category": "工学",
+          "reason": "浙江大学官网学院（系）页面将其列入信息学部；学院官网“学院概况-师资队伍”直接列出教师。"
+        },
+        {
+          "name": "生物医学工程与仪器科学学院",
+          "url": "http://www.cbeis.zju.edu.cn/",
+          "faculty_list_url": "http://www.cbeis.zju.edu.cn/dsml_65451/list.htm",
+          "discipline_category": "工学",
+          "reason": "浙江大学官网学院（系）页面将其列入信息学部；学院博士招生简章引用该官网导师名录。"
+        },
+        {
+          "name": "集成电路学院",
+          "url": "https://ic.zju.edu.cn/",
+          "faculty_list_url": "https://ic.zju.edu.cn/szjs/list.htm",
+          "discipline_category": "工学",
+          "reason": "浙江大学官网学院（系）页面将其列入信息学部；学院官网人事人才栏目提供“师资介绍”。"
+        },
+        {
+          "name": "人工智能学院",
+          "url": "https://ai.zju.edu.cn/",
+          "faculty_list_url": "https://ai.zju.edu.cn/90206/list.htm",
+          "discipline_category": "工学",
+          "reason": "浙江大学官网学院（系）页面将其列入信息学部；学院官网师资队伍页面直接列出教师。"
+        }
+      ]
+    },
+    {
+      "school": "复旦大学",
+      "college_index_url": "https://www.fudan.edu.cn/489/list.htm",
+      "colleges": [
+        {
+          "name": "计算与智能创新学院",
+          "url": "https://ai.fudan.edu.cn/",
+          "faculty_list_url": "https://ai.fudan.edu.cn/53161/list.htm",
+          "discipline_category": "工学",
+          "reason": "复旦大学官网院系专业页面列出该学院；学院新官网“师资队伍-教职工名录（按职称）”由 Webplus teacherHome 动态接口提供完整教师数据，03_advisor_stubs 对该入口做复旦计算与智能创新学院适配，按学术职称/导师信号保留导师候选，避免行政教职工混入。"
+        },
+        {
+          "name": "大数据学院",
+          "url": "https://sds.fudan.edu.cn/",
+          "faculty_list_url": "https://sds.fudan.edu.cn/17415/list.htm",
+          "discipline_category": "工学",
+          "reason": "复旦大学官网院系专业页面列出该学院；学院官网导航“师资队伍”下有教授/研究员、副教授/副研究员等入口，覆盖数据科学、机器学习、可视化、计算神经科学等方向。"
+        },
+        {
+          "name": "未来信息创新学院",
+          "url": "https://fit.fudan.edu.cn/",
+          "faculty_list_url": "https://fit.fudan.edu.cn/Data/List/apy",
+          "discipline_category": "工学",
+          "reason": "复旦大学官网院系专业页面列出该学院；学院官网“师资队伍-教师名录（按拼音）”提供分页教师名录，覆盖电子信息、通信、光电、智能信息处理等方向。"
+        },
+        {
+          "name": "微电子学院",
+          "url": "https://sme.fudan.edu.cn/",
+          "faculty_list_url": "https://sme.fudan.edu.cn/apy/list.htm",
+          "discipline_category": "工学",
+          "reason": "复旦大学官网院系专业页面列出该学院；学院官网“师资概况-教师名录-按拼音”可直接列出教师，当前通用解析器可抽取百余名教师。"
+        },
+        {
+          "name": "集成电路与微纳电子创新学院",
+          "url": "https://icmne.fudan.edu.cn/",
+          "faculty_list_url": "https://icmne.fudan.edu.cn/szgk/list.htm",
+          "discipline_category": "工学",
+          "reason": "复旦大学官网院系专业页面列出该学院；学院官网“教师名录”分页列出教师，当前入口可作为第一页种子，后续应补分页适配以覆盖 list2/list3 等页面。"
+        },
+        {
+          "name": "生物医学工程与技术创新学院",
+          "url": "https://bme-college.fudan.edu.cn/",
+          "faculty_list_url": "https://bme-college.fudan.edu.cn/szdw/list.htm",
+          "discipline_category": "工学",
+          "reason": "复旦大学官网院系专业页面列出该学院；学院官网导航“师资团队”直接指向该入口，覆盖医学影像、智能医疗、可穿戴/植入式芯片等交叉方向。"
+        },
+        {
+          "name": "智能机器人与先进制造创新学院",
+          "url": "https://ciram.fudan.edu.cn/",
+          "faculty_list_url": "https://ciram.fudan.edu.cn/zcdw/list.htm",
+          "discipline_category": "工学",
+          "reason": "复旦大学官网院系专业页面列出该学院；学院官网当前“师资队伍”页为空，组成单位页列出智能机器人研究院、可信具身智能研究院、智慧纳米机器人与纳米系统国际研究院、计算力学与人工智能交叉研究院等入口，03_advisor_stubs 对该学院做站点级聚合适配。"
+        },
+        {
+          "name": "智能材料与未来能源创新学院",
+          "url": "https://icome.fudan.edu.cn/",
+          "faculty_list_url": "https://icome.fudan.edu.cn/49292/list.htm",
+          "discipline_category": "工学",
+          "reason": "复旦大学官网院系专业页面列出该学院；学院官网“师资队伍-教职员工”列出主聘教师，并有学术带头人等子入口。"
+        },
+        {
+          "name": "人工智能创新与产业研究院",
+          "url": "https://ai3.fudan.edu.cn/",
+          "faculty_list_url": "https://ai3.fudan.edu.cn/yjspy/dsdw.htm",
+          "discipline_category": "工学",
+          "reason": "该单位不是复旦官网院系专业页中的教学学院，但其官网“研究生培养-导师队伍”直接列出 AI for Science、人工智能、智能机器人等方向导师，属于导师数据库需要覆盖的重点招生单位。"
+        }
+      ]
+    },
+    {
+      "school": "上海交通大学",
+      "college_index_url": "https://www.sjtu.edu.cn/xygk/yxsz.html",
+      "colleges": [
+        {
+          "name": "计算机学院",
+          "url": "https://cs.sjtu.edu.cn/",
+          "faculty_list_url": "https://cs.sjtu.edu.cn/jiaoshiml.html",
+          "discipline_category": "工学",
+          "reason": "上海交大原电子信息与电气工程学院（SEIEE）于近年拆分为多个独立学院；计算机学院（含网络空间安全学院、密码学院）的官网“师资队伍-教师名录”集中列出全体教师。"
+        },
+        {
+          "name": "人工智能学院",
+          "url": "https://soai.sjtu.edu.cn/",
+          "faculty_list_url": "https://soai.sjtu.edu.cn/cn/faculty/zzjs",
+          "discipline_category": "工学",
+          "reason": "学院官网“师资队伍-专职教师”页面（/cn/faculty/zzjs）列出全体专职教师；DB 原有该学院记录但 faculty_list_url 为空，仅抓到 39 个 stub，需以本入口替换。"
+        },
+        {
+          "name": "自动化与感知学院",
+          "url": "https://sais.sjtu.edu.cn/",
+          "faculty_list_url": "https://sais.sjtu.edu.cn/faculty.html",
+          "discipline_category": "工学",
+          "reason": "原 SEIEE 拆分后的独立学院；自动化、感知与机器人方向，官网“师资队伍-教师名录”集中列出教师。"
+        },
+        {
+          "name": "集成电路学院",
+          "url": "https://icisee.sjtu.edu.cn/",
+          "faculty_list_url": "https://icisee.sjtu.edu.cn/jiaoshiml.html",
+          "discipline_category": "工学",
+          "reason": "原 SEIEE 拆分后的独立学院（含信息与电子工程学院）；官网“师资队伍-教师名录”集中列出教师。"
+        },
+        {
+          "name": "电气工程学院",
+          "url": "https://see.sjtu.edu.cn/",
+          "faculty_list_url": "https://see.sjtu.edu.cn/jiaoshiml.html",
+          "discipline_category": "工学",
+          "reason": "原 SEIEE 拆分后的独立学院；电气工程方向覆盖控制、电力电子、信号处理，是 CSAI 关键词命中的相关学院之一。"
+        }
+      ]
+    },
+    {
+      "school": "清华大学",
+      "college_index_url": "https://www.tsinghua.edu.cn/yxsz.htm",
+      "colleges": [
+        {
+          "name": "人工智能学院",
+          "url": "https://collegeai.tsinghua.edu.cn/",
+          "faculty_list_url": "https://collegeai.tsinghua.edu.cn/rydw.htm",
+          "discipline_category": "工学",
+          "reason": "清华 2024 年新成立的人工智能学院；官网“人员队伍”页直接列出全体教师。"
+        },
+        {
+          "name": "软件学院",
+          "url": "https://www.thss.tsinghua.edu.cn/",
+          "faculty_list_url": "https://www.thss.tsinghua.edu.cn/szdw/jsml.htm",
+          "discipline_category": "工学",
+          "reason": "清华软件学院官网“师资队伍-教师名录”集中列出全体教师。"
+        },
+        {
+          "name": "集成电路学院",
+          "url": "http://www.sic.tsinghua.edu.cn/",
+          "faculty_list_url": "http://www.sic.tsinghua.edu.cn/szdw/jyry.htm",
+          "discipline_category": "工学",
+          "reason": "清华集成电路学院（前身为微纳电子系 + 电子工程系部分）官网“师资队伍-教研人员”页列出全体教研人员。"
+        },
+        {
+          "name": "自动化系",
+          "url": "https://www.au.tsinghua.edu.cn/",
+          "faculty_list_url": "https://www.au.tsinghua.edu.cn/szdw/jsdw1/ayjscz.htm",
+          "discipline_category": "工学",
+          "reason": "清华自动化系官网“按研究所查找”页面以静态 HTML 列出 88+ 个老师姓名链接，是覆盖最全的师资入口。"
+        },
+        {
+          "name": "电子工程系",
+          "url": "https://www.ee.tsinghua.edu.cn/",
+          "faculty_list_url": "https://www.ee.tsinghua.edu.cn/ryqk/teacher/dlyxtyjs/js2.htm",
+          "discipline_category": "工学",
+          "reason": "清华电子工程系师资按 7 个研究所 × 3 个职级 (教授/副教授/讲师) 分为 21 个子页；此 URL 为电路与系统研究所教授页，是真正的『枢纽页』 — 静态 HTML 里含跨研究所的导航链接，_find_thu_faculty_sub_links 借此发现并 LLM 抽取所有 20 个 sibling 子页。",
+          "known_issue": "stage 4 抓 bio 时，大约 53/78 个老师的个人主页落在 web.ee.tsinghua.edu.cn 子域上，该子域 2026-05-30 起持续返回 503 Service Unavailable（非临时限流，重跑无效）。当前 bio 覆盖率 32% (25/78)，剩余 53 个等子域恢复后重跑 04_advisor_details.py --school 清华 --college 电子工程系 即可补完。"
+        },
+        {
+          "name": "信息科学技术学院",
+          "url": "https://www.sist.tsinghua.edu.cn/",
+          "faculty_list_url": "https://www.sist.tsinghua.edu.cn/jsdw/jsml.htm",
+          "discipline_category": "工学",
+          "reason": "清华信息学院（cs/ee/auto/sw 上级学部）的“教授名录”汇总页；与下属系会有重叠教师，但通过姓名去重不会重复入库。"
+        },
+        {
+          "name": "交叉信息研究院",
+          "url": "https://iiis.tsinghua.edu.cn/",
+          "faculty_list_url": "https://iiis.tsinghua.edu.cn/rydw.htm",
+          "discipline_category": "工学",
+          "reason": "清华交叉信息研究院（含姚班/智班）官网“人员队伍”页列出全职/兼职教师。"
+        },
+        {
+          "name": "高等研究院",
+          "url": "https://www.ias.tsinghua.edu.cn/",
+          "faculty_list_url": "https://www.ias.tsinghua.edu.cn/yjry/jy.htm",
+          "discipline_category": "理学",
+          "reason": "清华高研院“研究人员-教研系列”页直接列出全部教研人员；CS/AI 关键词不直接命中，靠 04_advisor_details --college 显式带入。"
+        }
+      ]
+    }
+  ]
+}
